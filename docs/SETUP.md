@@ -17,22 +17,26 @@ Everything below uses the Firebase console and a terminal. You need Node 22, and
 ## 3. Authentication
 
 1. Authentication > Sign-in method > enable **Email/Password** only.
-2. Authentication > Users > **Add user** twice, one per person, with strong, different passwords.
-3. If the console offers it under Authentication > Settings > User actions, turn **off** "Enable create (sign-up)". Even if left on, the database rules refuse every account that is not one of the two.
+2. Authentication > Users > **Add user** once, for **yourself** (the owner), with a strong password. The other person is not added by hand: you invite her from the app (step 10).
+3. If the console offers it under Authentication > Settings > User actions, turn **off** "Enable create (sign-up)". Invites still work, because the server creates her account. Even if left on, the database rules refuse every account that is not one of the two.
 4. If the console offers **Email enumeration protection** (Authentication > Settings), turn it on.
-5. Copy the two **User UID** values.
+5. Copy your own **User UID** and put it in `.env` as `VITE_OWNER_UID`.
 
-## 4. Database rules
+## 4. Accounts and database rules
+
+Decide the public address first (step 9), for example `https://notes.yourdomain.com`. Then:
 
 ```bash
-cp config/accounts.example.json config/accounts.json   # put the two UIDs in
-npm run rules:render                                   # writes firestore.rendered.rules
+npm run accounts:init -- YOUR_USER_UID https://notes.yourdomain.com   # writes config/accounts.json
+npm run rules:render                                                  # writes firestore.rendered.rules and functions/.env
 ```
+
+`accounts:init` makes a fixed, random ID for the invited person. The database rules allow exactly your ID and hers, and the invite function creates her account with that ID.
 
 1. Firestore Database > **Create database** (Native mode, pick a region near you).
 2. `npx firebase-tools login`, then `npx firebase-tools deploy --only firestore:rules`.
 
-`firestore.rendered.rules` is generated and git-ignored. `npm run deploy` always re-renders it from `config/accounts.json`.
+`firestore.rendered.rules` and `functions/.env` are generated and git-ignored. `npm run deploy` always re-renders them from `config/accounts.json`.
 
 ## 5. App Check (blocks requests that do not come from your site)
 
@@ -73,13 +77,16 @@ Function region defaults to `us-central1`. Change it in `functions/src/index.ts`
 
 Firebase console > Hosting > **Add custom domain**. Use a subdomain with a neutral name, for example `notes.yourdomain.com`, and add the DNS records Firebase shows. The HTTPS certificate is issued automatically.
 
-## 10. First run
+## 10. First run and the invite
 
-0. Each person should change the password you gave them: **Settings > Change login password**.
-1. Person A opens the site, logs in, chooses a display name and **chat passphrase**, then a **quick code**.
-2. Person B does the same.
-3. Both open **Settings > Verify safety code**, compare the 30 digits on a call you trust, and tap **They match**.
-4. Start chatting. The tab title shows the neutral name and blinks quietly when a message arrives in a background tab.
+1. Open the site, log in as yourself, and choose a display name, a **chat passphrase**, then a **quick code**.
+2. Open **Settings > Invite**, type her email, and tap **Create invite link**. Copy the link and send it to her privately (a call or a message app you trust).
+3. She opens the link, types a password twice ("Password" and "Retry password"), and taps **Set password**. Then she logs in with her email and that password. She chooses her own display name, chat passphrase and quick code.
+4. The link works once and Firebase makes it expire after **1 hour**. If it expires, make a new one: it only resets her password, nothing else.
+5. Both open **Settings > Verify safety code**, compare the 30 digits on a call you trust, and tap **They match**.
+6. Start chatting. The tab title shows the neutral name and blinks quietly when a message arrives in a background tab.
+
+Later, each person can change their own password in **Settings > Change login password**.
 
 ## If something goes wrong
 
@@ -87,6 +94,9 @@ Firebase console > Hosting > **Add custom domain**. Use a subdomain with a neutr
 | --- | --- |
 | "Not configured" screen | A value is missing from `.env`. Rebuild after fixing it. |
 | "No access" screen | The account is not one of the two in `config/accounts.json`. Re-render and redeploy the rules. |
+| "This invite cannot be used" | The link expired (1 hour) or was already used. Make a new one in Settings > Invite. |
+| Invite says the server is not set up | `functions/.env` is missing. Run `npm run rules:render`, then `npm run deploy`. |
+| Invite says the email belongs to another account | Use a different email for her, or delete the other account in the Firebase console. |
 | Forgot the passphrase | On the unlock screen use "Forgot passphrase", which resets the keys. Old messages are lost. |
 | Other person's badge says "Key changed" | They reset their keys, or someone changed them. Compare the safety code again. |
 | Rules tests cannot start | They need Java and the Firestore emulator (a download from Google). |

@@ -16,18 +16,25 @@ if (testMode) {
 } else {
   const file = join(root, 'config', 'accounts.json');
   if (!existsSync(file)) {
-    console.error('Missing config/accounts.json. Copy config/accounts.example.json and put in the two Firebase user IDs.');
+    console.error('Missing config/accounts.json. Run: node scripts/init-accounts.mjs <your-firebase-uid> <https://your-app-address>');
     process.exit(1);
   }
   const parsed = JSON.parse(readFileSync(file, 'utf8'));
-  uids = parsed.uids;
+  uids = parsed.ownerUid ? [parsed.ownerUid, parsed.partnerUid] : parsed.uids;
+  if (parsed.ownerUid && parsed.partnerUid && parsed.appUrl) {
+    // The invite function reads these (functions/.env is git-ignored).
+    writeFileSync(
+      join(root, 'functions', '.env'),
+      `OWNER_UID=${parsed.ownerUid}\nPARTNER_UID=${parsed.partnerUid}\nAPP_URL=${parsed.appUrl}\n`,
+    );
+  }
   const ok =
     Array.isArray(uids) &&
     uids.length === 2 &&
     uids[0] !== uids[1] &&
     uids.every((u) => typeof u === 'string' && /^[A-Za-z0-9]{20,40}$/.test(u));
   if (!ok) {
-    console.error('config/accounts.json must hold exactly two different Firebase user IDs (20-40 letters and digits each).');
+    console.error('config/accounts.json must hold your user ID (ownerUid) and the partner ID (partnerUid), different, 20-40 letters and digits each.');
     process.exit(1);
   }
 }

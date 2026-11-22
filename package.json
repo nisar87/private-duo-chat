@@ -14,7 +14,8 @@
     "rules:render": "node scripts/render-rules.mjs",
     "test:rules": "node scripts/render-rules.mjs --test && npx firebase-tools emulators:exec --only firestore \"vitest run --config vitest.rules.config.ts\"",
     "deploy": "node scripts/render-rules.mjs && npm run build && npx firebase-tools deploy",
-    "test:e2e": "vite build -c vite.e2e.config.ts && node tests/e2e/smoke.mjs"
+    "test:e2e": "vite build -c vite.e2e.config.ts && node tests/e2e/smoke.mjs",
+    "accounts:init": "node scripts/init-accounts.mjs"
   },
   "dependencies": {
     "emojibase-data": "18.0.0",

@@ -2,6 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { WrongPassphraseError } from '../crypto/identity';
 import { checkPassphrase } from '../crypto/passphrase';
 import { Emoji } from '../emoji/Emoji';
+import { createInvite } from '../invite/invite';
 import {
   DEFAULTS,
   LIMITS,
@@ -234,6 +235,13 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         </div>
       </div>
 
+      {s.uid && s.uid === import.meta.env.VITE_OWNER_UID && (
+        <>
+          <h2>Invite</h2>
+          <InviteBox />
+        </>
+      )}
+
       <h2>Account</h2>
       <div className="section">
         <p className="hint">Signed in as {s.email}</p>
@@ -252,6 +260,65 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
             setAsk(null);
           }}
         />
+      )}
+    </div>
+  );
+}
+
+/** Owner only: makes the one-time link that lets the other person choose her own password. */
+function InviteBox() {
+  const [email, setEmail] = useState('');
+  const [link, setLink] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  async function make(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    setError('');
+    setLink('');
+    setCopied(false);
+    try {
+      const r = await createInvite(email.trim());
+      setLink(r.link);
+    } catch (err) {
+      const m = (err as { message?: string }).message;
+      setError(m && !/^internal$/i.test(m) ? m : 'Could not make the invite. Try again.');
+    }
+    setBusy(false);
+  }
+
+  return (
+    <div className="section">
+      <p className="hint">
+        Type her email and make a link. Send it to her privately. She opens it, chooses her own password (twice) and then logs in. The link works once and for 1 hour; make a new one any time.
+      </p>
+      <form onSubmit={make} className="row" style={{ flexWrap: 'wrap' }}>
+        <input
+          type="email"
+          placeholder="her email"
+          aria-label="Her email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          style={{ flex: 1, minWidth: 200 }}
+        />
+        <button className="btn" disabled={busy}>{busy ? 'Making…' : 'Create invite link'}</button>
+      </form>
+      {error && <p className="error">{error}</p>}
+      {link && (
+        <div style={{ marginTop: 10 }}>
+          <input readOnly value={link} aria-label="Invite link" onFocus={(e) => e.currentTarget.select()} style={{ width: '100%' }} />
+          <div className="row" style={{ marginTop: 8 }}>
+            <button
+              className="btn secondary"
+              onClick={() => void navigator.clipboard.writeText(link).then(() => setCopied(true))}
+            >
+              {copied ? 'Copied' : 'Copy link'}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

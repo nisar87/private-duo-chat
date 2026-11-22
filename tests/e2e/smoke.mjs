@@ -53,6 +53,31 @@ try {
   await waitText('Log in');
   ok((await page.title()) === 'Notes', 'tab title is the neutral name "Notes"');
 
+  // --- invite link: she chooses her own password, twice ---
+  await page.goto('http://localhost:4173/#invite=e2e-code-her-0123456789', { waitUntil: 'networkidle0' });
+  await waitText('Choose your password');
+  ok(!page.url().includes('invite='), 'the invite code is removed from the address bar');
+  const pw = await page.$$('input[type=password]');
+  await pw[0].type('short');
+  await pw[1].type('short');
+  await clickText('Set password');
+  await waitText('at least 12 characters.');
+  ok(true, 'a too-short password is refused');
+  await retype(pw[0], 'a-long-enough-password');
+  await retype(pw[1], 'a-long-enough-passwor!');
+  await clickText('Set password');
+  await waitText('do not match');
+  ok(true, 'two different passwords are refused');
+  await retype(pw[1], 'a-long-enough-password');
+  await clickText('Set password');
+  await waitText('Password saved. Now log in.');
+  ok((await page.$eval('input[type=email]', (i) => i.value)) === 'her@example.com', 'after setting the password the login screen has her email filled in');
+  await page.goto('http://localhost:4173/#invite=used-code-0123456789', { waitUntil: 'networkidle0' });
+  await waitText('This invite cannot be used');
+  ok(true, 'an expired or used invite link says so');
+  await page.goto('http://localhost:4173/', { waitUntil: 'networkidle0' });
+  await waitText('Log in');
+
   // --- login ---
   await page.type('input[type=email]', 'ann@example.com');
   await page.type('input[type=password]', 'login-password-1');
@@ -231,8 +256,15 @@ try {
   await clickText('Unlock');
   await page.waitForSelector('.chat');
 
-  // --- logout ---
+  // --- owner makes an invite link ---
   await clickText('⚙️');
+  await waitText('Create invite link');
+  await page.type('input[aria-label="Her email"]', 'her@example.com');
+  await clickText('Create invite link');
+  await page.waitForSelector('input[aria-label="Invite link"]');
+  ok((await page.$eval('input[aria-label="Invite link"]', (i) => i.value)).includes('#invite='), 'the owner gets an invite link in Settings');
+
+  // --- logout ---
   await waitText('Log out');
   await clickText('Log out');
   await waitText('Log in');

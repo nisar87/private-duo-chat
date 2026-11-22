@@ -1,3 +1,5 @@
 {
-  "uids": ["PUT_FIREBASE_UID_OF_PERSON_A_HERE", "PUT_FIREBASE_UID_OF_PERSON_B_HERE"]
+  "ownerUid": "PUT_THE_OWNER_FIREBASE_UID_HERE",
+  "partnerUid": "run: npm run accounts:init   (makes this for you)",
+  "appUrl": "https://chat.your-domain.example"
 }

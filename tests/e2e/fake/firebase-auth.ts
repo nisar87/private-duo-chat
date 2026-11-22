@@ -28,3 +28,8 @@ export const reauthenticateWithCredential = async (_u: unknown, c: { password: s
   if (c.password === 'wrong') throw Object.assign(new Error('bad'), { code: 'auth/invalid-credential' });
 };
 export const updatePassword = async () => undefined;
+export const verifyPasswordResetCode = async (_a: unknown, code: string) => {
+  if (code.includes('used')) throw Object.assign(new Error('expired'), { code: 'auth/invalid-action-code' });
+  return 'her@example.com';
+};
+export const confirmPasswordReset = async () => undefined;

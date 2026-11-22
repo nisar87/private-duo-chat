@@ -65,6 +65,10 @@ Full steps are in [docs/SETUP.md](docs/SETUP.md). In short:
 | `functions/` | `purgeExpired`: deletes expired messages every 15 minutes |
 | `firebase.json` | Hosting settings and security headers |
 
+## Inviting the second person
+
+You create only your own account in the Firebase console. In **Settings > Invite** you type her email and get a one-time link. She opens it, chooses her password (typed twice), then logs in. No one else can sign up, and the link expires after 1 hour. See `docs/SETUP.md` step 10.
+
 ## Status
 
 Version 1.0.0. Built, tested (unit, session and headless-browser tests) and ready to deploy. Not yet run against a live Firebase project, and the database-rules tests need the Firestore emulator, which could not be downloaded where this was built; run `npm run test:rules` once on your own machine.

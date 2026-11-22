@@ -1,5 +1,8 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { missingConfig } from '../config';
+import { firebase } from '../data/firebase';
+import { PASSWORD_MIN, checkNewPassword, setLoginPrefill, takeLoginPrefill } from '../invite/invite';
 import { checkPassphrase } from '../crypto/passphrase';
 import { isValidQuickCode } from '../crypto/quick';
 import { WrongPassphraseError } from '../crypto/identity';
@@ -63,7 +66,8 @@ function PassphraseMeter({ score }: { score: number }) {
 // ---------- Login ----------
 
 export function Login() {
-  const [email, setEmail] = useState('');
+  const [justSet] = useState(() => takeLoginPrefill());
+  const [email, setEmail] = useState(justSet ?? '');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -117,6 +121,7 @@ export function Login() {
             required
           />
         </label>
+        {justSet && <p className="notice ok">Password saved. Now log in.</p>}
         {error && <p className="error">{error}</p>}
         {resetSent && (
           <p className="notice ok">If this email has an account, a reset link was sent.</p>
@@ -517,5 +522,69 @@ export function PassphrasePrompt({ onDone, onCancel }: { onDone: () => void; onC
         </form>
       </div>
     </div>
+  );
+}
+
+/** Opened from the invite link: the invited person chooses her own password, twice. */
+export function Invite({ code, onDone }: { code: string; onDone: () => void }) {
+  const [email, setEmail] = useState<string | null>(null);
+  const [bad, setBad] = useState(false);
+  const [pw, setPw] = useState('');
+  const [again, setAgain] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    verifyPasswordResetCode(firebase().auth, code)
+      .then((e) => live && setEmail(e))
+      .catch(() => live && setBad(true));
+    return () => {
+      live = false;
+    };
+  }, [code]);
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    const problem = checkNewPassword(pw, again);
+    if (problem) return setError(problem);
+    setBusy(true);
+    setError('');
+    try {
+      await confirmPasswordReset(firebase().auth, code, pw);
+      if (email) setLoginPrefill(email);
+      onDone();
+    } catch {
+      setBad(true);
+    }
+  }
+
+  if (bad) {
+    return (
+      <Screen>
+        <h1>This invite cannot be used</h1>
+        <p>The link has expired or was already used. Ask for a new one.</p>
+        <button className="btn block" onClick={onDone}>Go to log in</button>
+      </Screen>
+    );
+  }
+  if (!email) return <Splash />;
+  return (
+    <Screen>
+      <h1>Welcome</h1>
+      <p>Choose your password for <b>{email}</b>. Only you will know it.</p>
+      <form onSubmit={submit}>
+        <label className="field">
+          <span>Password (at least {PASSWORD_MIN} characters)</span>
+          <input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} required autoFocus />
+        </label>
+        <label className="field">
+          <span>Retry password</span>
+          <input type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} required />
+        </label>
+        {error && <p className="error">{error}</p>}
+        <button className="btn block" disabled={busy}>{busy ? 'Saving…' : 'Set password'}</button>
+      </form>
+    </Screen>
   );
 }
