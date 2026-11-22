@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+config/accounts.json
+firestore.rendered.rules
+.firebase/
+.firebaserc
+*.log
+.DS_Store
+serviceAccount*.json
+*-firebase-adminsdk-*.json
+functions/node_modules/
+functions/lib/
+coverage/
