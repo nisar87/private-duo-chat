@@ -228,7 +228,7 @@ function clearLocalData(): void {
  * methods; they never see a key. Keys exist only in this object's memory and
  * are dropped on lock, log out or reload.
  */
-class SessionStore {
+export class SessionStore {
   private s: SessionState = INITIAL;
   private listeners = new Set<() => void>();
   private unsubs: (() => void)[] = [];
