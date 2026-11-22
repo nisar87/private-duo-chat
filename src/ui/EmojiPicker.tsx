@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GROUPS, loadEmoji, type EmojiData } from '../emoji/data';
 import { Emoji } from '../emoji/Emoji';
+import { stillUrl } from '../emoji/pictures';
+import { useSettings } from '../settings/settings';
 
 /** Recently used emoji, kept in memory only for this visit. */
 const recent: string[] = [];
@@ -10,6 +12,7 @@ export function EmojiPicker({ onPick, onClose }: { onPick: (emoji: string) => vo
   const [group, setGroup] = useState(0);
   const [search, setSearch] = useState('');
   const ref = useRef<HTMLDivElement>(null);
+  const { emojiStyle } = useSettings();
 
   useEffect(() => {
     let alive = true;
@@ -39,14 +42,16 @@ export function EmojiPicker({ onPick, onClose }: { onPick: (emoji: string) => vo
 
   const shown = useMemo(() => {
     if (!data) return [];
+    // Newest emoji have no 3D picture yet; hide them unless plain system emoji are chosen.
+    const usable = emojiStyle === 'native' ? data.items : data.items.filter((i) => stillUrl(i.e) !== null);
     const q = search.trim().toLowerCase();
     if (q) {
-      return data.items
+      return usable
         .filter((i) => i.label.includes(q) || i.tags.some((t) => t.includes(q)))
         .slice(0, 160);
     }
-    return data.items.filter((i) => i.group === group);
-  }, [data, group, search]);
+    return usable.filter((i) => i.group === group);
+  }, [data, group, search, emojiStyle]);
 
   function pick(e: string) {
     const at = recent.indexOf(e);
