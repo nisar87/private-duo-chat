@@ -61,7 +61,7 @@ async function verifyBoth(A: SessionStore, B: SessionStore) {
 beforeEach(() => resetFake());
 
 describe('setup and first messages', () => {
-  it('walks through setup, remembers the other person's key automatically', async () => {
+  it('walks through setup and remembers the other key automatically', async () => {
     const { A, B } = await twoPeople();
     expect(A.getState().phase).toBe('unlocked');
     expect(A.getState().peerStatus).toBe('verified');
