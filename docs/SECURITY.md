@@ -38,6 +38,11 @@ Keys are non-extractable `CryptoKey` objects held in memory. They are dropped on
 6. **The quick code is weaker than the passphrase.** Anyone who knows it and reaches the computer while the tab is open can read the chat. It stops working after 3 wrong tries, 12 hours after the passphrase was last typed, and when the tab is closed.
 7. **No independent security audit.** If secrecy is a matter of personal safety, use Signal.
 
+## Things the app keeps in memory
+
+- The login password is held in page memory for up to 10 minutes after login, only so the "create passphrase" screen can refuse an identical passphrase. It is never stored or sent anywhere else.
+- The only thing written to browser storage is the tab-alert preference (blink, dot or off).
+
 ## Verify the safety code once
 
 Without this, someone with write access to the database could swap a public key and sit in the middle. Both people compare the 30 digits in person or on a call you trust. If a key ever changes afterwards, sending is blocked until you compare again.

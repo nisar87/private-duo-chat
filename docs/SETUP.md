@@ -19,7 +19,8 @@ Everything below uses the Firebase console and a terminal. You need Node 22, and
 1. Authentication > Sign-in method > enable **Email/Password** only.
 2. Authentication > Users > **Add user** twice, one per person, with strong, different passwords.
 3. If the console offers it under Authentication > Settings > User actions, turn **off** "Enable create (sign-up)". Even if left on, the database rules refuse every account that is not one of the two.
-4. Copy the two **User UID** values.
+4. If the console offers **Email enumeration protection** (Authentication > Settings), turn it on.
+5. Copy the two **User UID** values.
 
 ## 4. Database rules
 
