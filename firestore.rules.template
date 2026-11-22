@@ -57,7 +57,7 @@ service cloud.firestore {
         && request.resource.data.expireAt is timestamp
         && request.resource.data.expireAt > request.time
         // 7 days plus 1 hour of slack for clock differences
-        && request.resource.data.expireAt <= request.time + duration.value(169, 'h')
+        && request.resource.data.expireAt <= request.time + duration.value(721, 'h')
         && request.resource.data.ciphertext is string
         && request.resource.data.ciphertext.size() < 20000
         && request.resource.data.nonce is string

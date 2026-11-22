@@ -121,7 +121,7 @@ describe('messages', () => {
       setDoc(doc(as(A), 'chats', 'main', 'messages', 'm1'), message(A, { expireAt: Timestamp.fromMillis(Date.now() - 1000) })),
     );
     await assertFails(
-      setDoc(doc(as(A), 'chats', 'main', 'messages', 'm1'), message(A, { expireAt: Timestamp.fromMillis(Date.now() + 30 * 86400000) })),
+      setDoc(doc(as(A), 'chats', 'main', 'messages', 'm1'), message(A, { expireAt: Timestamp.fromMillis(Date.now() + 31 * 86400000) })),
     );
     await assertSucceeds(
       setDoc(doc(as(A), 'chats', 'main', 'messages', 'm2'), message(A, { expireAt: Timestamp.fromMillis(Date.now() + 7 * 86400000) })),
