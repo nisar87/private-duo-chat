@@ -102,7 +102,7 @@ try {
 
   // --- the other person appears ---
   await page.evaluate(() => window.__e2e.addPeer('Bob'));
-  await waitText('Not verified');
+  await page.waitForFunction(() => document.querySelector('.chat-head .name')?.textContent === 'Bob');
   ok((await page.$eval('.chat-head .name', (e) => e.textContent)) === 'Bob', 'header shows the other person');
 
   // --- typing shortcuts ---
@@ -199,16 +199,6 @@ try {
   await waitText('hello from Bob');
   ok(true, 'the right code reopens the chat with messages decrypted');
 
-  // --- verify safety code ---
-  await clickText('Verify now');
-  await waitText('Verify safety code');
-  const code = await page.$eval('.code-box', (e) => e.textContent.trim());
-  ok(/^(\d{5} ){5}\d{5}$/.test(code), `safety code has 6 groups of 5 digits (${code})`);
-  await clickText('They match');
-  await page.waitForSelector('.chat');
-  await page.waitForFunction(() => document.querySelector('.badge.ok')?.textContent === 'Verified');
-  ok(true, 'after comparing the code the badge shows Verified');
-
   // --- settings ---
   await clickText('⚙️');
   await waitText('Delete messages after');
@@ -220,9 +210,9 @@ try {
 
   // --- a swapped key is caught and sending is blocked ---
   await page.evaluate(() => window.__e2e.swapPeerKey());
-  await page.waitForFunction(() => document.querySelector('.badge.warn')?.textContent === 'Key changed');
+  await waitText('Accept new key');
   ok((await page.$eval('.composer textarea', (e) => e.disabled)) === true, 'when the other person\'s key changes, the input is disabled');
-  ok((await bodyText()).includes('key changed, so sending is blocked'), 'a clear warning explains why');
+  ok((await bodyText()).includes('so sending is paused'), 'a clear warning explains why');
 
   // --- auto-lock after time in the background (about 20 seconds in this test build) ---
   const page3 = await browser.newPage();

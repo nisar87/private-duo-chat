@@ -469,7 +469,16 @@ export class SessionStore {
     if (token !== this.recomputeToken) return;
     this.chatKey = chatKey;
     this.set({ peerStatus: status, canChat: chatKey !== null, epoch });
+    // No manual safety-code check: the first key we see is remembered automatically,
+    // and a later change is still caught and blocks sending until accepted.
+    if (status === 'unverified' && this.wrapKey && !this.autoPinning) {
+      this.autoPinning = true;
+      void this.markVerified().catch(() => undefined).finally(() => {
+        this.autoPinning = false;
+      });
+    }
   }
+  private autoPinning = false;
 
   private wipeSecrets(): void {
     this.priv = null;

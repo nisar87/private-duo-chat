@@ -61,10 +61,10 @@ async function verifyBoth(A: SessionStore, B: SessionStore) {
 beforeEach(() => resetFake());
 
 describe('setup and first messages', () => {
-  it('walks through setup, shows unverified, then verified', async () => {
+  it('walks through setup, remembers the other person's key automatically', async () => {
     const { A, B } = await twoPeople();
     expect(A.getState().phase).toBe('unlocked');
-    expect(A.getState().peerStatus).toBe('unverified');
+    expect(A.getState().peerStatus).toBe('verified');
     expect(A.getState().peer?.displayName).toBe('Bob');
     await verifyBoth(A, B);
   });
@@ -154,7 +154,7 @@ describe('locking and the code', () => {
     await until(() => A.getState().canChat, 'chat key back');
     await A.markVerified();
     expect(A.getState().peerStatus).toBe('verified');
-    expect(B.getState().peerStatus).toBe('unverified');
+    expect(B.getState().peerStatus).toBe('verified');
   });
 
   it('logs out completely after 3 wrong codes', async () => {

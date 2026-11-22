@@ -180,7 +180,7 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
       skip.current = null;
       stick.current = true;
     } catch (e) {
-      setError(e instanceof PeerKeyChangedError ? 'The other person\'s key changed. Verify the safety code first.' : 'Could not send this message.');
+      setError(e instanceof PeerKeyChangedError ? 'The other person\'s key changed. Tap Accept new key above.' : 'Could not send this message.');
     }
   }, [draft, names, prefs.shortcutsToEmoji, s.canChat, s.online, blocked]);
 
@@ -248,15 +248,6 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
     <div className="chat">
       <header className="chat-head">
         <div className="name">{peerName}</div>
-        {s.peer && (
-          <button
-            className={s.peerStatus === 'verified' ? 'badge ok' : 'badge warn'}
-            onClick={s.peerStatus === 'verified' ? undefined : onVerify}
-            title={s.peerStatus === 'verified' ? 'Safety code checked' : 'Compare the safety code'}
-          >
-            {s.peerStatus === 'verified' ? 'Verified' : s.peerStatus === 'changed' ? 'Key changed' : 'Not verified'}
-          </button>
-        )}
         <button className="icon-btn" title="Lock now (or press Esc twice)" onClick={() => session.lock()}>
           🔒
         </button>
@@ -265,16 +256,10 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
         </button>
       </header>
 
-      {s.peerStatus === 'unverified' && (
-        <div className="banner">
-          Not verified. Compare the safety code with {peerName} to be sure nobody is in the middle.
-          <button className="link" onClick={onVerify}>Verify now</button>
-        </div>
-      )}
       {blocked && (
         <div className="banner">
-          {peerName}'s key changed, so sending is blocked. Compare the safety code again before you continue.
-          <button className="link" onClick={onVerify}>Verify now</button>
+          {peerName}'s key changed (for example after a reset), so sending is paused.
+          <button className="link" onClick={() => void session.markVerified().catch(() => onVerify())}>Accept new key</button>
         </div>
       )}
       {!s.online && <div className="banner">You are offline. Sending is paused.</div>}
