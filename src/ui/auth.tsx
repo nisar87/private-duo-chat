@@ -112,7 +112,7 @@ export function Login() {
           />
         </label>
         <label className="field">
-          <span>Password</span>
+          <span>Login password</span>
           <input
             type="password"
             autoComplete="current-password"
@@ -155,8 +155,8 @@ export function Setup() {
     e.preventDefault();
     setError('');
     if (!check.ok) return setError(check.hint);
-    if (pass !== again) return setError('The two passphrases do not match.');
-    if (pwGuard.matches(pass)) return setError('The passphrase must be different from your login password.');
+    if (pass !== again) return setError('The two chat passwords do not match.');
+    if (pwGuard.matches(pass)) return setError('The chat password must be different from your login password.');
     setBusy(true);
     try {
       await session.setup(pass, name);
@@ -168,10 +168,10 @@ export function Setup() {
 
   return (
     <Screen wide>
-      <h1>Create your chat passphrase</h1>
+      <h1>Create your chat password</h1>
       <p>
-        The passphrase locks your messages on this device. It is never sent anywhere, and it must be
-        different from your login password.
+        This is a second, separate password. It is not the password you just used to log in. It locks
+        your messages on this device and is never sent anywhere, so choose a different one.
       </p>
       <form onSubmit={submit}>
         <label className="field">
@@ -179,7 +179,7 @@ export function Setup() {
           <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} required />
         </label>
         <label className="field">
-          <span>Passphrase (any you like)</span>
+          <span>Chat password (any you like)</span>
           <input
             type="password"
             autoComplete="off"
@@ -201,7 +201,7 @@ export function Setup() {
           />
         </label>
         <p className="notice warn">
-          If you forget this passphrase it cannot be recovered. The only fix is to reset the keys,
+          If you forget this chat password it cannot be recovered. The only fix is to reset the keys,
           and messages not yet deleted become unreadable.
         </p>
         <label className="checkline">
@@ -238,7 +238,7 @@ export function UnlockPassphrase() {
     try {
       await session.unlockWithPassphrase(pass);
     } catch (err) {
-      setError(err instanceof WrongPassphraseError ? 'Wrong passphrase.' : 'Could not unlock.');
+      setError(err instanceof WrongPassphraseError ? 'Wrong chat password.' : 'Could not unlock.');
       setPass('');
       setBusy(false);
     }
@@ -249,10 +249,10 @@ export function UnlockPassphrase() {
   return (
     <Screen>
       <h1>Unlock</h1>
-      <p>{me ? `Hello, ${me.displayName}. ` : ''}Type your chat passphrase.</p>
+      <p>{me ? `Hello, ${me.displayName}. ` : ''}Type your chat password.</p>
       <form onSubmit={submit}>
         <label className="field">
-          <span>Passphrase</span>
+          <span>Chat password</span>
           <input
             type="password"
             autoComplete="off"
@@ -270,7 +270,7 @@ export function UnlockPassphrase() {
       <div className="row spread">
         <p className="hint">
           <button type="button" className="link" onClick={() => setResetting(true)}>
-            Forgot passphrase
+            Forgot chat password
           </button>
         </p>
         <p className="hint">
@@ -296,7 +296,7 @@ export function ResetKeys({ onCancel, onDone }: { onCancel: () => void; onDone?:
     setError('');
     if (confirm.trim().toUpperCase() !== 'RESET') return setError('Type RESET to confirm.');
     if (!check.ok) return setError(check.hint);
-    if (pass !== again) return setError('The two passphrases do not match.');
+    if (pass !== again) return setError('The two chat passwords do not match.');
     setBusy(true);
     try {
       await session.resetKeys(pass);
@@ -316,7 +316,7 @@ export function ResetKeys({ onCancel, onDone }: { onCancel: () => void; onDone?:
       </p>
       <form onSubmit={submit}>
         <label className="field">
-          <span>New passphrase</span>
+          <span>New chat password</span>
           <input type="password" autoComplete="off" value={pass} onChange={(e) => setPass(e.target.value)} required />
         </label>
         <PassphraseMeter score={check.score} />
@@ -432,7 +432,7 @@ export function SetQuickCode({ onDone }: { onDone?: () => void }) {
       <h1>Choose a quick code</h1>
       <p>
         After the chat locks, this short code opens it again, so you do not retype the long
-        passphrase. It is weaker than the passphrase. Three wrong tries log you out.
+        chat password. It is weaker than the chat password. Three wrong tries log you out.
       </p>
       <form onSubmit={submit}>
         <label className="field">
@@ -494,7 +494,7 @@ export function PassphrasePrompt({ onDone, onCancel }: { onDone: () => void; onC
       await session.elevate(pass);
       onDone();
     } catch (err) {
-      setError(err instanceof WrongPassphraseError ? 'Wrong passphrase.' : 'Could not check it.');
+      setError(err instanceof WrongPassphraseError ? 'Wrong chat password.' : 'Could not check it.');
       setPass('');
       setBusy(false);
     }
@@ -503,11 +503,11 @@ export function PassphrasePrompt({ onDone, onCancel }: { onDone: () => void; onC
   return (
     <div className="modal-back">
       <div className="card">
-        <h1>Type your passphrase</h1>
-        <p>This change needs the full passphrase, not the quick code.</p>
+        <h1>Type your chat password</h1>
+        <p>This change needs the full chat password, not the quick code.</p>
         <form onSubmit={submit}>
           <label className="field">
-            <span>Passphrase</span>
+            <span>Chat password</span>
             <input type="password" autoComplete="off" value={pass} onChange={(e) => setPass(e.target.value)} autoFocus required />
           </label>
           {error && <p className="error">{error}</p>}
@@ -575,7 +575,7 @@ export function Invite({ code, onDone }: { code: string; onDone: () => void }) {
       <p>Choose your password for <b>{email}</b>. Only you will know it.</p>
       <form onSubmit={submit}>
         <label className="field">
-          <span>Password (at least {PASSWORD_MIN} characters)</span>
+          <span>Login password (at least {PASSWORD_MIN} characters)</span>
           <input type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} required autoFocus />
         </label>
         <label className="field">

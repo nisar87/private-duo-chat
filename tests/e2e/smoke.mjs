@@ -82,7 +82,7 @@ try {
   await page.type('input[type=email]', 'ann@example.com');
   await page.type('input[type=password]', 'login-password-1');
   await clickText('Log in');
-  await waitText('Create your chat passphrase');
+  await waitText('Create your chat password');
   ok(true, 'login leads to first-time setup');
 
   // --- setup: mismatching, then valid passphrase (no strength rules) ---
@@ -213,10 +213,10 @@ try {
   ok(/^(\d{5} ){5}\d{5}$/.test(code), `safety code has 6 groups of 5 digits (${code})`);
   await clickText('They match');
   // after a quick-code unlock the full passphrase is needed first
-  await waitText('Type your passphrase');
+  await waitText('Type your chat password');
   await page.type('.modal-back input[type=password]', 'wrong wrong wrong wrong');
   await clickText('Continue');
-  await waitText('Wrong passphrase');
+  await waitText('Wrong chat password');
   ok(true, 'a sensitive change after a quick unlock asks for the passphrase and refuses a wrong one');
   await retype(await page.$('.modal-back input[type=password]'), PASS);
   await clickText('Continue');
