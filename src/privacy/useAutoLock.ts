@@ -1,14 +1,17 @@
 import { useEffect } from 'react';
-import { AUTO_LOCK_MS, ESC_DOUBLE_MS } from '../config';
+import { ESC_DOUBLE_MS } from '../config';
+import { getSettings, useSettings } from '../settings/settings';
 import { session } from '../session/session';
 import { isAttended } from './focus';
 
 /**
- * Locks the chat after 15 minutes in the background, and at once when Esc is
+ * Locks the chat after the chosen time (15 minutes unless changed) in the background, and at once when Esc is
  * pressed twice. Browsers slow down timers in background tabs, so the time
  * away is also checked the moment the person comes back.
  */
 export function useAutoLock(enabled: boolean): void {
+  const { autoLockMinutes, escTwiceLock } = useSettings();
+  const AUTO_LOCK_MS = autoLockMinutes * 60 * 1000;
   useEffect(() => {
     if (!enabled) return;
     let awaySince: number | null = isAttended() ? null : Date.now();
@@ -38,7 +41,7 @@ export function useAutoLock(enabled: boolean): void {
 
     let lastEsc = 0;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
+      if (e.key !== 'Escape' || !getSettings().escTwiceLock) return;
       const now = Date.now();
       if (now - lastEsc <= ESC_DOUBLE_MS) {
         lastEsc = 0;
@@ -57,5 +60,5 @@ export function useAutoLock(enabled: boolean): void {
       document.removeEventListener('visibilitychange', onChange);
       window.removeEventListener('keydown', onKey);
     };
-  }, [enabled]);
+  }, [enabled, AUTO_LOCK_MS, escTwiceLock]);
 }

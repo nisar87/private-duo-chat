@@ -34,7 +34,11 @@ try {
     await el.click();
   };
   const waitText = (text, timeout = 15000) =>
-    page.waitForFunction((t) => document.body.innerText.includes(t), { timeout }, text);
+    page.waitForFunction((t) => {
+      const c = document.body.cloneNode(true);
+      c.querySelectorAll('img.emo').forEach((i) => i.replaceWith(i.alt));
+      return c.innerText !== undefined && (document.body.innerText + c.textContent).includes(t);
+    }, { timeout }, text);
   const retype = async (el, text) => {
     await el.click();
     await page.keyboard.down('Control');
@@ -112,7 +116,7 @@ try {
   await page.type('.picker input', 'heart');
   await sleep(300);
   const first = await page.$('.picker .grid button');
-  const emojiChar = await first.evaluate((b) => b.textContent);
+  const emojiChar = await first.evaluate((b) => b.querySelector('img')?.alt ?? b.textContent);
   await first.click();
   ok((await page.$eval('.composer textarea', (e) => e.value)).includes(emojiChar), 'emoji picker inserts the chosen emoji');
   await page.keyboard.press('Escape');
@@ -140,7 +144,7 @@ try {
   await page.evaluate(() => window.__e2e.peerSend('<img src=x onerror="document.title=\'HACKED\'"><script>1</script>'));
   await waitText('<script>1</script>');
   await sleep(200);
-  ok((await page.title()) === 'Notes' && (await page.$('.bubble img')) === null, 'HTML in a message is shown as text and does not run');
+  ok((await page.title()) === 'Notes' && (await page.$('.bubble img:not(.emo)')) === null, 'HTML in a message is shown as text and does not run');
 
   // --- tab alert, blur, auto behaviour ---
   const page2 = await browser.newPage(); // brings another tab to the front

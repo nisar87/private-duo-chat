@@ -2,6 +2,8 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, use
 import { MAX_MESSAGE_CHARS } from '../crypto/messages';
 import { applyUndo, convertLastToken, convertOnType, isEmojiOnly, type Skip, type Undo } from '../emoji/convert';
 import { loadEmoji } from '../emoji/data';
+import { withEmoji } from '../emoji/Emoji';
+import { useSettings } from '../settings/settings';
 import { useAttended } from '../privacy/focus';
 import { PeerKeyChangedError, session } from '../session/session';
 import { useSession } from '../session/useSession';
@@ -23,8 +25,9 @@ function dayLabel(ms: number): string {
   return d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-function timeLabel(ms: number): string {
-  return new Date(ms).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+function timeLabel(ms: number, format: 'auto' | '12h' | '24h'): string {
+  const hour12 = format === 'auto' ? undefined : format === '12h';
+  return new Date(ms).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12 });
 }
 
 function untilLabel(expireAtMs: number, now: number): string {
@@ -39,12 +42,14 @@ function untilLabel(expireAtMs: number, now: number): string {
 const URL_RE = /\bhttps?:\/\/[^\s<>"']+/g;
 
 /** Message text as React nodes. Never HTML. Web links become plain links with no referrer. */
-function renderText(text: string) {
+function renderText(text: string, big = false) {
+  const size = big ? 56 : undefined;
+  const play = big ? 'always' : 'hover';
   const parts: ReactNode[] = [];
   let last = 0;
   for (const m of text.matchAll(URL_RE)) {
     const idx = m.index ?? 0;
-    if (idx > last) parts.push(text.slice(last, idx));
+    if (idx > last) parts.push(...withEmoji(text.slice(last, idx), `t${idx}`, size, play));
     parts.push(
       <a key={idx} href={m[0]} target="_blank" rel="noopener noreferrer nofollow">
         {m[0]}
@@ -52,13 +57,15 @@ function renderText(text: string) {
     );
     last = idx + m[0].length;
   }
-  if (last < text.length) parts.push(text.slice(last));
+  if (last < text.length) parts.push(...withEmoji(text.slice(last), 'end', size, play));
   return parts;
 }
 
 export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerify: () => void }) {
   const s = useSession();
-  const attended = useAttended();
+  const prefs = useSettings();
+  const looking = useAttended();
+  const attended = looking || !prefs.blurWhenAway;
   const cache = useRef(new Map<string, string | null>());
   const [, bump] = useState(0);
   const [now, setNow] = useState(Date.now());
@@ -136,9 +143,9 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
     [s.messages, s.uid],
   );
   useEffect(() => {
-    if (!attended || !s.canChat) return;
+    if (!looking || !s.canChat || !prefs.readReceipts) return;
     if (newestFromPeer > (s.me?.lastReadAtMs ?? 0)) session.markRead();
-  }, [attended, s.canChat, newestFromPeer, s.me?.lastReadAtMs]);
+  }, [looking, prefs.readReceipts, s.canChat, newestFromPeer, s.me?.lastReadAtMs]);
 
   useEffect(() => {
     const close = () => setMenu(null);
@@ -163,7 +170,7 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
   const peerName = s.peer?.displayName ?? 'Waiting…';
 
   const send = useCallback(async () => {
-    const text = convertLastToken(draft, names, skip.current).trim();
+    const text = (prefs.shortcutsToEmoji ? convertLastToken(draft, names, skip.current) : draft).trim();
     if (!text || !s.canChat || blocked || !s.online) return;
     setError('');
     try {
@@ -175,9 +182,14 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
     } catch (e) {
       setError(e instanceof PeerKeyChangedError ? 'The other person\'s key changed. Verify the safety code first.' : 'Could not send this message.');
     }
-  }, [draft, names, s.canChat, s.online, blocked]);
+  }, [draft, names, prefs.shortcutsToEmoji, s.canChat, s.online, blocked]);
 
   function onChange(value: string, caret: number) {
+    if (!prefs.shortcutsToEmoji) {
+      undo.current = null;
+      setDraft(value);
+      return;
+    }
     const r = convertOnType(value, caret, names, skip.current);
     skip.current = r.skip;
     if (r.conversion) {
@@ -204,7 +216,8 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
         return;
       }
     }
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+    const sendKey = prefs.enterToSend ? e.key === 'Enter' && !e.shiftKey : e.key === 'Enter' && (e.ctrlKey || e.metaKey);
+    if (sendKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       void send();
     }
@@ -297,12 +310,12 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
                   }}
                 >
                   <div className={it.text === null ? 'bubble failed' : big ? 'bubble big' : 'bubble'}>
-                    {it.text === null ? 'Could not decrypt this message' : renderText(it.text)}
+                    {it.text === null ? 'Could not decrypt this message' : renderText(it.text, big)}
                   </div>
                   <div className="meta">
-                    <span>{timeLabel(it.raw.createdAtMs)}</span>
-                    <span>{untilLabel(it.raw.expireAtMs, now)}</span>
-                    {tick && <span className={tick.read ? 'ticks read' : 'ticks'}>{tick.glyph}</span>}
+                    <span>{timeLabel(it.raw.createdAtMs, prefs.timeFormat)}</span>
+                    {prefs.showExpiry && <span>{untilLabel(it.raw.expireAtMs, now)}</span>}
+                    {tick && prefs.readReceipts && <span className={tick.read ? 'ticks read' : 'ticks'}>{tick.glyph}</span>}
                   </div>
                 </div>
               </Fragment>

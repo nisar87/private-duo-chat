@@ -1,21 +1,97 @@
-import { useState, type FormEvent } from 'react';
-import { RETENTION_OPTIONS } from '../config';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { WrongPassphraseError } from '../crypto/identity';
 import { checkPassphrase } from '../crypto/passphrase';
-import { getAlertMode, setAlertMode, type AlertMode } from '../privacy/tabAlert';
+import { Emoji } from '../emoji/Emoji';
+import {
+  DEFAULTS,
+  LIMITS,
+  RETENTION_OPTIONS,
+  resetSettings,
+  updateSettings,
+  useSettings,
+  type Settings,
+} from '../settings/settings';
 import { session } from '../session/session';
 import { useSession } from '../session/useSession';
 import { PassphrasePrompt, ResetKeys, SetQuickCode } from './auth';
 
 type Panel = 'none' | 'passphrase' | 'quick' | 'reset';
 
+function Row({ title, hint, def, children }: { title: string; hint?: string; def?: string; children: ReactNode }) {
+  return (
+    <div className="setting">
+      <div className="what">
+        <b>{title}</b>
+        {hint && <small>{hint}</small>}
+      </div>
+      <div className="ctl">
+        {children}
+        {def && <span className="def">default {def}</span>}
+      </div>
+    </div>
+  );
+}
+
+function Toggle({ k, title, hint }: { k: BoolKey; title: string; hint?: string }) {
+  const cfg = useSettings();
+  return (
+    <Row title={title} hint={hint} def={DEFAULTS[k] ? 'on' : 'off'}>
+      <label className="switch">
+        <input type="checkbox" checked={cfg[k]} onChange={(e) => updateSettings({ [k]: e.target.checked })} aria-label={title} />
+        <i />
+      </label>
+    </Row>
+  );
+}
+
+function Num({ k, title, hint, unit, step = 1 }: { k: NumKey; title: string; hint?: string; unit: string; step?: number }) {
+  const cfg = useSettings();
+  const lim = LIMITS[k];
+  return (
+    <Row title={title} hint={hint} def={`${DEFAULTS[k]} ${unit}`}>
+      <input
+        type="number"
+        min={lim.min}
+        max={lim.max}
+        step={step}
+        value={cfg[k]}
+        aria-label={title}
+        onChange={(e) => {
+          const n = Number(e.target.value);
+          if (e.target.value !== '' && Number.isFinite(n)) updateSettings({ [k]: n });
+        }}
+      />
+      <span>{unit}</span>
+    </Row>
+  );
+}
+
+function Pick<K extends ChoiceKey>({ k, title, hint, options }: { k: K; title: string; hint?: string; options: [Settings[K], string][] }) {
+  const cfg = useSettings();
+  const def = options.find((o) => o[0] === DEFAULTS[k])?.[1];
+  return (
+    <Row title={title} hint={hint} def={def}>
+      <select value={cfg[k]} aria-label={title} onChange={(e) => updateSettings({ [k]: e.target.value } as Partial<Settings>)}>
+        {options.map(([v, label]) => (
+          <option key={v} value={v}>{label}</option>
+        ))}
+      </select>
+    </Row>
+  );
+}
+
+type BoolKey = { [K in keyof Settings]: Settings[K] extends boolean ? K : never }[keyof Settings];
+type NumKey = keyof typeof LIMITS;
+type ChoiceKey = { [K in keyof Settings]: Settings[K] extends string ? K : never }[keyof Settings];
+
 export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: () => void }) {
   const s = useSession();
-  const [alertMode, setMode] = useState<AlertMode>(getAlertMode());
+  const cfg = useSettings();
   const [panel, setPanel] = useState<Panel>('none');
   const [ask, setAsk] = useState<Panel | null>(null);
   const [msg, setMsg] = useState('');
   const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // Sensitive changes need the full passphrase. After a quick-code unlock, ask for it first.
   function guarded(next: Panel) {
@@ -27,30 +103,43 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
   if (panel === 'quick') return <SetQuickCode onDone={() => { setPanel('none'); setMsg('Quick code saved.'); }} />;
   if (panel === 'reset') return <ResetKeys onCancel={() => setPanel('none')} onDone={onBack} />;
 
+  const changed = (Object.keys(DEFAULTS) as (keyof Settings)[]).some((k) => cfg[k] !== DEFAULTS[k]);
+
   return (
     <div className="page">
       <div className="row spread">
         <h1>Settings</h1>
         <button className="link" onClick={onBack}>Back to chat</button>
       </div>
+      <div className="hero-emoji" aria-hidden="true">
+        {['😍', '🔥', '🥳', '💖', '✨'].map((g) => (
+          <Emoji key={g} glyph={g} size={44} play="always" />
+        ))}
+      </div>
+      <p className="hint" style={{ textAlign: 'center' }}>
+        Every value shows its default. Changes are saved in this browser and apply at once.
+      </p>
       {msg && <p className="notice ok">{msg}</p>}
 
       <h2>Messages</h2>
       <div className="section">
-        <label className="field">
-          <span>Delete messages after</span>
+        <Row title="Delete messages after" hint="Shared by both of you. Applies to new messages." def="24 hours">
           <select
             value={s.retentionMs}
+            aria-label="Delete messages after"
             onChange={(e) => void session.setRetention(Number(e.target.value))}
           >
             {RETENTION_OPTIONS.map((o) => (
               <option key={o.ms} value={o.ms}>{o.label}</option>
             ))}
           </select>
-        </label>
-        <p className="hint">Applies to new messages. It is one setting for both of you.</p>
+        </Row>
+        <Toggle k="readReceipts" title="Read ticks" hint="Show ✓✓ when she has read your message, and let her see when you have read hers." />
+        <Toggle k="showExpiry" title="Show 'deletes in…' under messages" />
+        <Toggle k="enterToSend" title="Enter sends the message" hint="When off, Enter makes a new line and Ctrl+Enter sends." />
+        <Toggle k="shortcutsToEmoji" title="Turn :) and :heart: into emoji" />
         {confirmClear ? (
-          <div className="row">
+          <div className="row" style={{ paddingTop: 10 }}>
             <button
               className="btn danger"
               onClick={() => {
@@ -63,28 +152,69 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
             <button className="btn secondary" onClick={() => setConfirmClear(false)}>Cancel</button>
           </div>
         ) : (
-          <button className="btn secondary" onClick={() => setConfirmClear(true)}>Clear chat now</button>
+          <div style={{ paddingTop: 10 }}>
+            <button className="btn secondary" onClick={() => setConfirmClear(true)}>Clear chat now</button>
+          </div>
         )}
+      </div>
+
+      <h2>Emoji</h2>
+      <div className="section">
+        <Pick
+          k="emojiStyle"
+          title="Emoji style"
+          hint="Animated 3D moves when you hover, and big emoji-only messages dance. Static 3D never moves. Plain uses your system's emoji."
+          options={[['animated', '3D, animated ✨'], ['static3d', '3D, still'], ['native', 'Plain (system)']]}
+        />
+      </div>
+
+      <h2>Privacy and locking</h2>
+      <div className="section">
+        <Num k="autoLockMinutes" title="Lock after being away" hint="Minutes this tab stays in the background before the chat locks." unit="min" />
+        <Toggle k="escTwiceLock" title="Press Esc twice to lock at once" />
+        <Toggle k="blurWhenAway" title="Blur messages when this window is not in focus" />
+        <Num k="quickCodeMaxWrong" title="Wrong quick codes before full log out" unit="tries" />
+        <Num k="passphraseMaxAgeHours" title="Quick code works for" hint="After this long you must type your passphrase again." unit="hours" />
       </div>
 
       <h2>New-message alert</h2>
       <div className="section">
-        <label className="field">
-          <span>When a message arrives while you are in another tab</span>
-          <select
-            value={alertMode}
-            onChange={(e) => {
-              const m = e.target.value as AlertMode;
-              setAlertMode(m);
-              setMode(m);
-            }}
-          >
-            <option value="blink">Blink the tab, then keep a dot</option>
-            <option value="dot">Dot only</option>
-            <option value="off">Off</option>
-          </select>
-        </label>
-        <p className="hint">Only the tab's title and icon change. No pop-ups, no sound, no text.</p>
+        <Pick
+          k="alertMode"
+          title="When a message arrives while you are in another tab"
+          hint="Only the tab's title and icon change. No pop-ups, no sound, no text."
+          options={[['blink', 'Blink, then keep a dot'], ['dot', 'Dot only'], ['off', 'Off']]}
+        />
+        {cfg.alertMode === 'blink' && <Num k="alertBlinkSeconds" title="Blink for" unit="seconds" />}
+      </div>
+
+      <h2>Look</h2>
+      <div className="section">
+        <Pick k="theme" title="Theme" options={[['system', 'Same as my computer'], ['light', 'Light'], ['dark', 'Dark']]} />
+        <Pick k="textSize" title="Text size" options={[['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']]} />
+        <Pick k="timeFormat" title="Clock" options={[['auto', 'Same as my computer'], ['12h', '12-hour'], ['24h', '24-hour']]} />
+      </div>
+      <div className="section">
+        {confirmReset ? (
+          <div className="row">
+            <button
+              className="btn"
+              onClick={() => {
+                resetSettings();
+                setConfirmReset(false);
+                setMsg('All settings are back to their defaults.');
+              }}
+            >
+              Yes, reset my settings
+            </button>
+            <button className="btn secondary" onClick={() => setConfirmReset(false)}>Cancel</button>
+          </div>
+        ) : (
+          <button className="btn secondary" disabled={!changed} onClick={() => setConfirmReset(true)}>
+            Reset all settings to defaults
+          </button>
+        )}
+        <p className="hint" style={{ marginTop: 8 }}>The message deletion time is shared, so it is not part of this reset.</p>
       </div>
 
       <h2>Security</h2>

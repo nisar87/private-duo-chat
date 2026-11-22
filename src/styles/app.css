@@ -18,7 +18,7 @@
   --radius: 14px;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --bg: #121715;
     --panel: #1a211e;
     --text: #e7eeea;
@@ -153,3 +153,81 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .page .section { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
 .page .section > *:last-child { margin-bottom: 0; }
 .modal-back { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: flex; align-items: center; justify-content: center; z-index: 40; padding: 20px; }
+
+/* ---- 3D emoji ---- */
+.emo { display: inline-block; width: 1.35em; height: 1.35em; vertical-align: -0.32em; object-fit: contain; user-select: text; }
+.emo-native { font-size: 1em; }
+.emo-bob:hover { animation: emo-wiggle 0.7s ease-in-out; }
+.emo-pop { animation: emo-pop 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) both; }
+.emo-pop.emo-bob { animation: emo-pop 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) both, emo-float 3.2s ease-in-out 0.6s infinite; }
+.bubble.big .emo { width: 56px; height: 56px; vertical-align: middle; }
+.picker .grid button { display: flex; align-items: center; justify-content: center; padding: 3px 0; transition: transform 0.12s; }
+.picker .grid button:hover { transform: scale(1.22); }
+.picker .grid .emo { width: 30px; height: 30px; vertical-align: middle; }
+.picker .tabs .emo { width: 22px; height: 22px; vertical-align: middle; }
+@keyframes emo-pop { from { transform: scale(0.2) rotate(-14deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes emo-wiggle { 0%, 100% { transform: rotate(0) scale(1); } 25% { transform: rotate(-12deg) scale(1.2); } 75% { transform: rotate(12deg) scale(1.2); } }
+@keyframes emo-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .emo, .emo-pop, .emo-bob:hover { animation: none !important; } }
+
+/* ---- settings screen ---- */
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.setting:last-child { border-bottom: 0; }
+.setting .what { flex: 1; min-width: 0; }
+.setting .what b { display: block; font-weight: 600; }
+.setting .what small { color: var(--muted); display: block; margin-top: 2px; }
+.setting .def { font-size: 12px; color: var(--muted); margin-left: 6px; }
+.setting .ctl { display: flex; align-items: center; gap: 8px; }
+.setting select, .setting input[type="number"] { padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: inherit; }
+.setting input[type="number"] { width: 78px; }
+.switch { position: relative; width: 44px; height: 26px; flex: none; }
+.switch input { opacity: 0; position: absolute; inset: 0; margin: 0; cursor: pointer; z-index: 1; }
+.switch i { position: absolute; inset: 0; border-radius: 13px; background: var(--line); transition: background 0.2s; }
+.switch i::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+.switch input:checked + i { background: var(--accent); }
+.switch input:checked + i::after { transform: translateX(18px); }
+.switch input:focus-visible + i { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hero-emoji { display: flex; gap: 6px; justify-content: center; padding: 6px 0 2px; }
+.hero-emoji .emo { width: 44px; height: 44px; }
+.btn.small { padding: 5px 10px; font-size: 13px; }
+:root[data-theme="light"] {
+  --bg: #f4f6f5;
+  --panel: #ffffff;
+  --text: #1c2421;
+  --muted: #66736d;
+  --line: #dfe5e2;
+  --accent: #2f6f5e;
+  --accent-text: #ffffff;
+  --mine: #2f6f5e;
+  --mine-text: #ffffff;
+  --theirs: #e9eeec;
+  --theirs-text: #1c2421;
+  --danger: #c2363b;
+  --warn-bg: #fff4d6;
+  --warn-text: #6b4e00;
+  --ok-bg: #e2f3ea;
+  --ok-text: #1f5a3f;
+  --radius: 14px;
+}
+:root[data-theme="dark"] {
+  --bg: #121715;
+  --panel: #1a211e;
+  --text: #e7eeea;
+  --muted: #93a39b;
+  --line: #2a3430;
+  --accent: #4aa58d;
+  --accent-text: #0c1411;
+  --mine: #2f7a67;
+  --mine-text: #ffffff;
+  --theirs: #26302c;
+  --theirs-text: #e7eeea;
+  --danger: #ef6b70;
+  --warn-bg: #3a3010;
+  --warn-text: #f2d98a;
+  --ok-bg: #173325;
+  --ok-text: #9fdcbd;
+}
+:root[data-text="small"] .bubble, :root[data-text="small"] .composer textarea { font-size: 13px; }
+:root[data-text="large"] .bubble, :root[data-text="large"] .composer textarea { font-size: 18px; }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }

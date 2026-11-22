@@ -1,25 +1,15 @@
-import { ALERT_BLINK_MS, APP_TITLE, BLINK_INTERVAL_MS } from '../config';
+import { APP_TITLE, BLINK_INTERVAL_MS } from '../config';
+import { getSettings, subscribe, updateSettings } from '../settings/settings';
 import { isAttended } from './focus';
 
 export type AlertMode = 'blink' | 'dot' | 'off';
-const KEY = 'pdc.alertMode';
 
 export function getAlertMode(): AlertMode {
-  try {
-    const v = localStorage.getItem(KEY);
-    if (v === 'blink' || v === 'dot' || v === 'off') return v;
-  } catch {
-    /* ignore */
-  }
-  return 'blink';
+  return getSettings().alertMode;
 }
 
 export function setAlertMode(mode: AlertMode): void {
-  try {
-    localStorage.setItem(KEY, mode);
-  } catch {
-    /* ignore */
-  }
+  updateSettings({ alertMode: mode });
   if (mode === 'off') tabAlert.clear();
 }
 
@@ -49,6 +39,9 @@ class TabAlert {
     const clearIfSeen = () => {
       if (isAttended()) this.clear();
     };
+    subscribe(() => {
+      if (getSettings().alertMode === 'off') this.clear();
+    });
     window.addEventListener('focus', clearIfSeen);
     document.addEventListener('visibilitychange', clearIfSeen);
   }
@@ -63,7 +56,7 @@ class TabAlert {
       return;
     }
     if (this.timer) return;
-    this.stopAt = Date.now() + ALERT_BLINK_MS;
+    this.stopAt = Date.now() + getSettings().alertBlinkSeconds * 1000;
     this.paint(true);
     this.timer = setInterval(() => {
       if (Date.now() >= this.stopAt) {

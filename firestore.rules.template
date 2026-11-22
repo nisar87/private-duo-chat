@@ -38,7 +38,7 @@ service cloud.firestore {
       allow read: if isMember();
       allow create, update: if isMember()
         && request.resource.data.keys().hasOnly(['retentionMs', 'updatedBy'])
-        && request.resource.data.retentionMs in [3600000, 86400000, 604800000]
+        && request.resource.data.retentionMs in [300000, 3600000, 21600000, 86400000, 604800000, 2592000000]
         && request.resource.data.updatedBy == request.auth.uid;
       allow delete: if false;
     }

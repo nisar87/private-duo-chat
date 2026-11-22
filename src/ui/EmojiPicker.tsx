@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GROUPS, loadEmoji, type EmojiData } from '../emoji/data';
+import { Emoji } from '../emoji/Emoji';
 
 /** Recently used emoji, kept in memory only for this visit. */
 const recent: string[] = [];
@@ -77,7 +78,7 @@ export function EmojiPicker({ onPick, onClose }: { onPick: (emoji: string) => vo
               setGroup(g.group);
             }}
           >
-            {g.icon}
+            <Emoji glyph={g.icon} size={22} />
           </button>
         ))}
       </div>
@@ -88,7 +89,7 @@ export function EmojiPicker({ onPick, onClose }: { onPick: (emoji: string) => vo
             <div className="label">Recent</div>
             {recent.map((e) => (
               <button key={`r${e}`} type="button" onClick={() => pick(e)}>
-                {e}
+                <Emoji glyph={e} size={30} />
               </button>
             ))}
             <div className="label">{GROUPS.find((g) => g.group === group)?.title}</div>
@@ -97,7 +98,7 @@ export function EmojiPicker({ onPick, onClose }: { onPick: (emoji: string) => vo
         {data && shown.length === 0 && <div className="none">No emoji found</div>}
         {shown.map((i) => (
           <button key={i.e} type="button" title={i.label} onClick={() => pick(i.e)}>
-            {i.e}
+            <Emoji glyph={i.e} size={30} />
           </button>
         ))}
       </div>

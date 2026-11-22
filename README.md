@@ -58,10 +58,20 @@ Full steps are in [docs/SETUP.md](docs/SETUP.md). In short:
 | `src/session/session.ts` | The only place that holds keys; login, unlock, lock, send, receive |
 | `src/ui/` | Screens: login, setup, unlock, quick code, verify, chat, settings, emoji picker |
 | `src/privacy/` | Tab alert, auto-lock, Esc-twice lock, focus detection |
-| `src/emoji/` | Typed shortcuts, conversion with Backspace undo, emoji data loader |
+| `src/emoji/` | Typed shortcuts, conversion with Backspace undo, emoji data loader, 3D emoji pictures (`Emoji.tsx`, `pictures.ts`) |
+| `src/settings/` | Every adjustable value with its default and limits, saved in this browser |
+| `public/emoji3d/` | Bundled 3D and animated emoji (Microsoft Fluent Emoji, MIT, see `NOTICE.txt`); rebuilt with `scripts/build-emoji-assets.mjs` |
 | `firestore.rules.template` | Database rules: only the two accounts can read or write |
 | `functions/` | `purgeExpired`: deletes expired messages every 15 minutes |
 | `firebase.json` | Hosting settings and security headers |
+
+## Settings
+
+Open **Settings** (the gear) to change: how long messages live (5 minutes to 30 days, shared by both of you), read ticks, "deletes in" text, Enter or Ctrl+Enter to send, shortcut-to-emoji, emoji style (animated 3D, still 3D, plain), auto-lock minutes, Esc-twice lock, blur when away, wrong-code limit, how long the quick code works, alert style and blink time, theme, text size and clock. Each shows its default, and **Reset all settings to defaults** puts everything back. Values are kept in this browser only and survive logout; the message deletion time is stored in the chat so both of you share it.
+
+## Emoji pictures
+
+Emoji show as 3D pictures served from this site (no other website is contacted). About 1,850 are still 3D, and about 70 popular ones also move: they play on hover, and big emoji-only messages play on their own and pop in. People who prefer less motion get still pictures automatically. To change which emoji move, edit the list in `scripts/build-emoji-assets.mjs` and run it with the extracted `@lobehub/fluent-emoji-3d` and `@lobehub/fluent-emoji-anim-1` to `-4` npm packages (MIT).
 
 ## Keeping secrets out of git
 

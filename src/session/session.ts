@@ -23,12 +23,8 @@ import {
   type DocumentData,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
-import {
-  DEFAULT_RETENTION_MS,
-  PASSPHRASE_MAX_AGE_MS,
-  QUICK_CODE_MAX_WRONG,
-  missingConfig,
-} from '../config';
+import { missingConfig } from '../config';
+import { DEFAULT_RETENTION_MS, SETTINGS_KEY, getSettings } from '../settings/settings';
 import { CHAT_ID, chatEpoch, deriveChatKey } from '../crypto/chatkey';
 import { wipe } from '../crypto/encoding';
 import {
@@ -214,9 +210,13 @@ function recordOf(u: UserDoc): IdentityRecord {
   };
 }
 
+function passphraseMaxAgeMs(): number {
+  return getSettings().passphraseMaxAgeHours * 60 * 60 * 1000;
+}
+
 function clearLocalData(): void {
   try {
-    for (const k of Object.keys(localStorage)) if (k.startsWith('pdc.')) localStorage.removeItem(k);
+    for (const k of Object.keys(localStorage)) if (k.startsWith('pdc.') && k !== SETTINGS_KEY) localStorage.removeItem(k);
     sessionStorage.clear();
   } catch {
     /* storage may be unavailable */
@@ -545,7 +545,7 @@ export class SessionStore {
 
   async unlockWithQuick(code: string): Promise<void> {
     if (!this.quick || !this.s.me) throw new NotReadyError();
-    if (Date.now() - this.passphraseAt > PASSPHRASE_MAX_AGE_MS) {
+    if (Date.now() - this.passphraseAt > passphraseMaxAgeMs()) {
       this.quick = null;
       this.set({ phase: 'needPassphrase', quickCodeSet: false });
       throw new QuickCodeExpiredError();
@@ -555,11 +555,11 @@ export class SessionStore {
     } catch (e) {
       if (e instanceof WrongQuickCodeError) {
         this.wrongQuick++;
-        if (this.wrongQuick >= QUICK_CODE_MAX_WRONG) {
+        if (this.wrongQuick >= getSettings().quickCodeMaxWrong) {
           await this.logout();
           throw new TooManyAttemptsError();
         }
-        throw new QuickCodeError(QUICK_CODE_MAX_WRONG - this.wrongQuick);
+        throw new QuickCodeError(getSettings().quickCodeMaxWrong - this.wrongQuick);
       }
       throw e;
     }
@@ -576,7 +576,7 @@ export class SessionStore {
     this.chatKey = null;
     this.wrapKey = null;
     this.recomputeToken++;
-    const quickValid = this.quick !== null && Date.now() - this.passphraseAt <= PASSPHRASE_MAX_AGE_MS;
+    const quickValid = this.quick !== null && Date.now() - this.passphraseAt <= passphraseMaxAgeMs();
     if (!quickValid) this.quick = null;
     this.set({
       phase: quickValid ? 'needQuickCode' : 'needPassphrase',

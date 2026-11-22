@@ -150,8 +150,8 @@ describe('messages', () => {
 });
 
 describe('chat setting', () => {
-  it('accepts the three retention periods only', async () => {
-    for (const ms of [3600000, 86400000, 604800000]) {
+  it('accepts the listed retention periods only', async () => {
+    for (const ms of [300000, 3600000, 21600000, 86400000, 604800000, 2592000000]) {
       await assertSucceeds(setDoc(doc(as(A), 'chats', 'main'), { retentionMs: ms, updatedBy: A }));
     }
     await assertFails(setDoc(doc(as(A), 'chats', 'main'), { retentionMs: 1000, updatedBy: A }));
