@@ -23,3 +23,8 @@ export const signOut = async () => {
   setTimeout(() => cbs.forEach((cb) => cb(null)), 10);
 };
 export const sendPasswordResetEmail = async () => undefined;
+export const EmailAuthProvider = { credential: (email: string, password: string) => ({ email, password }) };
+export const reauthenticateWithCredential = async (_u: unknown, c: { password: string }) => {
+  if (c.password === 'wrong') throw Object.assign(new Error('bad'), { code: 'auth/invalid-credential' });
+};
+export const updatePassword = async () => undefined;

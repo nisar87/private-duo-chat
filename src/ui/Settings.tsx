@@ -15,7 +15,7 @@ import { session } from '../session/session';
 import { useSession } from '../session/useSession';
 import { PassphrasePrompt, ResetKeys, SetQuickCode } from './auth';
 
-type Panel = 'none' | 'passphrase' | 'quick' | 'reset';
+type Panel = 'none' | 'passphrase' | 'quick' | 'reset' | 'loginpw';
 
 function Row({ title, hint, def, children }: { title: string; hint?: string; def?: string; children: ReactNode }) {
   return (
@@ -100,6 +100,7 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
   }
 
   if (panel === 'passphrase') return <ChangePassphrase onDone={() => { setPanel('none'); setMsg('Passphrase changed.'); }} onCancel={() => setPanel('none')} />;
+  if (panel === 'loginpw') return <ChangeLoginPassword onDone={() => { setPanel('none'); setMsg('Login password changed.'); }} onCancel={() => setPanel('none')} />;
   if (panel === 'quick') return <SetQuickCode onDone={() => { setPanel('none'); setMsg('Quick code saved.'); }} />;
   if (panel === 'reset') return <ResetKeys onCancel={() => setPanel('none')} onDone={onBack} />;
 
@@ -228,6 +229,7 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
             {s.quickCodeSet ? 'Change quick code' : 'Set quick code'}
           </button>
           <button className="btn secondary" onClick={() => guarded('passphrase')}>Change passphrase</button>
+          <button className="btn secondary" onClick={() => setPanel('loginpw')}>Change login password</button>
         </div>
       </div>
 
@@ -250,6 +252,58 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
           }}
         />
       )}
+    </div>
+  );
+}
+
+function ChangeLoginPassword({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
+  const [cur, setCur] = useState('');
+  const [next, setNext] = useState('');
+  const [again, setAgain] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setError('');
+    if (next.length < 12) return setError('Use at least 12 characters.');
+    if (next === cur) return setError('The new password must be different.');
+    if (next !== again) return setError('The two new passwords do not match.');
+    setBusy(true);
+    try {
+      await session.changeLoginPassword(cur, next);
+      onDone();
+    } catch {
+      setError('The current password is wrong, or it could not be changed. Try again.');
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="screen">
+      <div className="card wide">
+        <h1>Change login password</h1>
+        <p>This is the password you type with your email. Your chat passphrase and messages are not affected.</p>
+        <form onSubmit={submit}>
+          <label className="field">
+            <span>Current password</span>
+            <input type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} required autoFocus />
+          </label>
+          <label className="field">
+            <span>New password (at least 12 characters)</span>
+            <input type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} required />
+          </label>
+          <label className="field">
+            <span>Type the new one again</span>
+            <input type="password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} required />
+          </label>
+          {error && <p className="error">{error}</p>}
+          <div className="row spread">
+            <button className="btn" disabled={busy}>{busy ? 'Changing…' : 'Change password'}</button>
+            <button type="button" className="link" onClick={onCancel}>Cancel</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

@@ -1,8 +1,11 @@
 import {
+  EmailAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
   type User,
 } from 'firebase/auth';
 import {
@@ -282,6 +285,18 @@ export class SessionStore {
   async login(email: string, password: string): Promise<void> {
     await signInWithEmailAndPassword(firebase().auth, email.trim(), password);
     pwGuard.remember(password);
+  }
+
+  /**
+   * Changes the login password (not the chat passphrase). The current password
+   * is checked again first, as Firebase requires. Throws if it is wrong.
+   */
+  async changeLoginPassword(current: string, next: string): Promise<void> {
+    const user = firebase().auth.currentUser;
+    if (!user || !user.email) throw new NotReadyError();
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, current));
+    await updatePassword(user, next);
+    pwGuard.remember(next);
   }
 
   async sendPasswordReset(email: string): Promise<void> {

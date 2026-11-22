@@ -14,7 +14,8 @@ const compact = JSON.parse(readFileSync('node_modules/emojibase-data/en/compact.
 // Emoji that move. Chosen for being the ones people send most, and kept small in total.
 const ANIMATED = [...(
   '😀😃😄😁😆😅😂🤣😊😇🙂😉😍🥰😘😋😛😜🤪😎🤩🥳😏😒😞😔😢😭😤😠😡🤯😱😨😰🥹🤗🤔🤭🤫🙄😬😴😷🥶🥵🥺😳😈👻💩🤡' +
-  '❤️🧡💛💚💙💜🖤💔💕💞💓💗💖💘💝👍👎👏🙌👋🤝🙏💪🔥✨🎉🎊🌹🌸⭐🌟💯🌙🎂🎁☕🍺🥂🐶🐱🦄🌈💋🫶🫠'
+  '❤️🧡💛💚💙💜🖤💔💕💞💓💗💖💘💝👍👎👏🙌👋🤝🙏💪🔥✨🎉🎊🌹🌸⭐🌟💯🌙🎂🎁☕🍺🥂🐶🐱🦄🌈💋🫶🫠' +
+  '🤓🤠🥸😝🤑🥴😵🫣🫡🤐😹😻🙈🙉🙊🐵🐸🐣🐧🐼🦊🐷🐥🍩🍦🍓🍑🧸🎈💃🕺🪩🎶🚀👑💎🍀🥳🫂🤌'
 )].reduce((acc, ch) => {
   // keep multi-code-point emoji (such as the red heart) together
   if (ch === '️') acc[acc.length - 1] += ch;

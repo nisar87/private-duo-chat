@@ -19,6 +19,9 @@ vi.mock('firebase/auth', () => ({
   signInWithEmailAndPassword: async () => undefined,
   sendPasswordResetEmail: async () => undefined,
   signOut: async () => undefined,
+  EmailAuthProvider: { credential: () => ({}) },
+  reauthenticateWithCredential: async () => undefined,
+  updatePassword: async () => undefined,
 }));
 vi.mock('../../src/data/firebase', () => ({
   firebase: () => ({ app: {}, auth: {}, db: { __db: true } }),

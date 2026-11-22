@@ -71,7 +71,7 @@ Open **Settings** (the gear) to change: how long messages live (5 minutes to 30 
 
 ## Emoji pictures
 
-Emoji show as 3D pictures served from this site (no other website is contacted). About 1,850 are still 3D, and about 70 popular ones also move: they play on hover, and big emoji-only messages play on their own and pop in. People who prefer less motion get still pictures automatically. To change which emoji move, edit the list in `scripts/build-emoji-assets.mjs` and run it with the extracted `@lobehub/fluent-emoji-3d` and `@lobehub/fluent-emoji-anim-1` to `-4` npm packages (MIT).
+Emoji show as 3D pictures served from this site (no other website is contacted). About 1,850 are still 3D, and about 100 popular and playful ones also move: they play on hover, and big emoji-only messages play on their own and pop in. People who prefer less motion get still pictures automatically. To change which emoji move, edit the list in `scripts/build-emoji-assets.mjs` and run it with the extracted `@lobehub/fluent-emoji-3d` and `@lobehub/fluent-emoji-anim-1` to `-4` npm packages (MIT).
 
 ## Keeping secrets out of git
 

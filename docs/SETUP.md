@@ -71,6 +71,7 @@ Firebase console > Hosting > **Add custom domain**. Use a subdomain with a neutr
 
 ## 10. First run
 
+0. Each person should change the password you gave them: **Settings > Change login password**.
 1. Person A opens the site, logs in, chooses a display name and **chat passphrase**, then a **quick code**.
 2. Person B does the same.
 3. Both open **Settings > Verify safety code**, compare the 30 digits on a call you trust, and tap **They match**.
