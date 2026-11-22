@@ -28,6 +28,15 @@
 
 Keys are non-extractable `CryptoKey` objects held in memory. They are dropped on lock, log out or reload. Firestore uses the memory-only cache, and nothing secret is written to `localStorage`, `sessionStorage` or IndexedDB.
 
+## Hardening in place
+
+- Strict security headers (`firebase.json`): a tight Content-Security-Policy (own site plus the Google reCAPTCHA and Firebase hosts only), no referrer, same-origin opener and resource policies, no camera, microphone, location, payment or USB.
+- Emoji pictures are bundled and served from the same site, so no emoji or font service is contacted.
+- Printing shows only the word "Notes".
+- Optional idle lock (Settings), auto-lock when in the background, Esc twice, blur when out of focus.
+- `npm audit` lists advisories in `@grpc/grpc-js`, pulled in by the Firebase packages. That library runs only in Node servers; the browser build uses Firestore over the web and does not include it, so these do not affect the running site. Recheck after Firebase updates.
+- Database rules limit message size, message life (30 days at most) and the fields a person can write.
+
 ## Limits you must accept
 
 1. **The code comes from the server on every visit.** Whoever controls the Firebase project or the domain could publish changed code that captures the passphrase. Own the Google account with 2-step verification, and remove any developer's access after launch.

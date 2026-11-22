@@ -10,10 +10,15 @@ import { isAttended } from './focus';
  * away is also checked the moment the person comes back.
  */
 export function useAutoLock(enabled: boolean): void {
-  const { autoLockMinutes, escTwiceLock } = useSettings();
+  const { autoLockMinutes, escTwiceLock, idleLockMinutes } = useSettings();
   const AUTO_LOCK_MS = autoLockMinutes * 60 * 1000;
   useEffect(() => {
     if (!enabled) return;
+    let lastInput = Date.now();
+    const touch = () => {
+      lastInput = Date.now();
+    };
+    const idleMs = idleLockMinutes * 60 * 1000;
     let awaySince: number | null = isAttended() ? null : Date.now();
     let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -34,7 +39,11 @@ export function useAutoLock(enabled: boolean): void {
     const onChange = () => (isAttended() ? back() : away());
     if (awaySince !== null) away();
 
-    const interval = setInterval(lockIfTooLong, 30_000);
+    const interval = setInterval(() => {
+      lockIfTooLong();
+      if (idleMs > 0 && Date.now() - lastInput >= idleMs) session.lock();
+    }, 30_000);
+    for (const ev of ['mousemove', 'mousedown', 'keydown', 'wheel', 'touchstart']) window.addEventListener(ev, touch, { passive: true });
     window.addEventListener('focus', onChange);
     window.addEventListener('blur', onChange);
     document.addEventListener('visibilitychange', onChange);
@@ -59,6 +68,7 @@ export function useAutoLock(enabled: boolean): void {
       window.removeEventListener('blur', onChange);
       document.removeEventListener('visibilitychange', onChange);
       window.removeEventListener('keydown', onKey);
+      for (const ev of ['mousemove', 'mousedown', 'keydown', 'wheel', 'touchstart']) window.removeEventListener(ev, touch);
     };
-  }, [enabled, AUTO_LOCK_MS, escTwiceLock]);
+  }, [enabled, AUTO_LOCK_MS, escTwiceLock, idleLockMinutes]);
 }

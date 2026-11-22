@@ -16,7 +16,7 @@ describe('settings', () => {
   it('has the planned defaults', () => {
     expect(DEFAULTS).toMatchObject({
       quickCodeMaxWrong: 3, passphraseMaxAgeHours: 12, escTwiceLock: true, blurWhenAway: true,
-      readReceipts: true, alertMode: 'blink', alertBlinkSeconds: 10, emojiStyle: 'animated',
+      readReceipts: true, alertMode: 'blink', alertBlinkSeconds: 10, emojiStyle: 'animated', idleLockMinutes: 0,
     });
   });
 

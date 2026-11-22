@@ -172,6 +172,7 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
       <h2>Privacy and locking</h2>
       <div className="section">
         <Num k="autoLockMinutes" title="Lock after being away" hint="Minutes this tab stays in the background before the chat locks." unit="min" />
+        <Num k="idleLockMinutes" title="Also lock when I do nothing" hint="Locks even if this window is in front and nobody touches the mouse or keyboard. 0 means never." unit="min" />
         <Toggle k="escTwiceLock" title="Press Esc twice to lock at once" />
         <Toggle k="blurWhenAway" title="Blur messages when this window is not in focus" />
         <Num k="quickCodeMaxWrong" title="Wrong quick codes before full log out" unit="tries" />

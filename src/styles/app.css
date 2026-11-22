@@ -340,3 +340,6 @@ body {
 .code-box { border-radius: 8px; }
 .notice, .banner { border-radius: 4px; }
 .hero-emoji .emo { filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.18)); }
+
+/* Never print or save the chat as a page */
+@media print { body * { display: none !important; } body::before { content: "Notes"; } }

@@ -65,6 +65,10 @@ Full steps are in [docs/SETUP.md](docs/SETUP.md). In short:
 | `functions/` | `purgeExpired`: deletes expired messages every 15 minutes |
 | `firebase.json` | Hosting settings and security headers |
 
+## Status
+
+Version 1.0.0. Built, tested (unit, session and headless-browser tests) and ready to deploy. Not yet run against a live Firebase project, and the database-rules tests need the Firestore emulator, which could not be downloaded where this was built; run `npm run test:rules` once on your own machine.
+
 ## Settings
 
 Open **Settings** (the gear) to change: how long messages live (5 minutes to 30 days, shared by both of you), read ticks, "deletes in" text, Enter or Ctrl+Enter to send, shortcut-to-emoji, emoji style (animated 3D, still 3D, plain), auto-lock minutes, Esc-twice lock, blur when away, wrong-code limit, how long the quick code works, alert style and blink time, theme, text size and clock. Each shows its default, and **Reset all settings to defaults** puts everything back. Values are kept in this browser only and survive logout; the message deletion time is stored in the chat so both of you share it.

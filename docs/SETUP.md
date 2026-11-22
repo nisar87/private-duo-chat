@@ -55,6 +55,10 @@ The app and the `purgeExpired` function delete expired messages. Add a Firestore
 gcloud firestore fields ttls update expireAt --collection-group=messages --enable-ttl --project YOUR_PROJECT_ID
 ```
 
+## 7b. Budget alert (Blaze plan)
+
+The Blaze plan has no spending cap. Two people cost almost nothing, but set a small alert anyway: Google Cloud console > Billing > Budgets & alerts > create a budget of, say, 5 USD with email alerts at 50% and 100%.
+
 ## 8. Deploy
 
 ```bash

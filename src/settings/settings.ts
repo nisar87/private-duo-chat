@@ -10,6 +10,7 @@ const envLock = Number(env.VITE_AUTO_LOCK_MINUTES);
 
 export interface Settings {
   autoLockMinutes: number;
+  idleLockMinutes: number;
   quickCodeMaxWrong: number;
   passphraseMaxAgeHours: number;
   escTwiceLock: boolean;
@@ -28,6 +29,7 @@ export interface Settings {
 
 export const DEFAULTS: Settings = {
   autoLockMinutes: envLock > 0 ? envLock : 15,
+  idleLockMinutes: 0,
   quickCodeMaxWrong: 3,
   passphraseMaxAgeHours: 12,
   escTwiceLock: true,
@@ -47,6 +49,7 @@ export const DEFAULTS: Settings = {
 /** Allowed range of each number. Anything outside is pulled back inside. */
 export const LIMITS = {
   autoLockMinutes: { min: 0.1, max: 240 },
+  idleLockMinutes: { min: 0, max: 480 },
   quickCodeMaxWrong: { min: 1, max: 10 },
   passphraseMaxAgeHours: { min: 1, max: 72 },
   alertBlinkSeconds: { min: 3, max: 120 },
