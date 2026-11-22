@@ -179,7 +179,7 @@ export function Setup() {
           <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} required />
         </label>
         <label className="field">
-          <span>Passphrase (5 random words, or 14+ characters)</span>
+          <span>Passphrase (any you like)</span>
           <input
             type="password"
             autoComplete="off"

@@ -334,7 +334,7 @@ function ChangeLoginPassword({ onDone, onCancel }: { onDone: () => void; onCance
   async function submit(e: FormEvent) {
     e.preventDefault();
     setError('');
-    if (next.length < 12) return setError('Use at least 12 characters.');
+    if (next.length < 6) return setError('Use at least 6 characters.');
     if (next === cur) return setError('The new password must be different.');
     if (next !== again) return setError('The two new passwords do not match.');
     setBusy(true);
@@ -358,7 +358,7 @@ function ChangeLoginPassword({ onDone, onCancel }: { onDone: () => void; onCance
             <input type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} required autoFocus />
           </label>
           <label className="field">
-            <span>New password (at least 12 characters)</span>
+            <span>New password (at least 6 characters)</span>
             <input type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} required />
           </label>
           <label className="field">

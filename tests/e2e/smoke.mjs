@@ -58,11 +58,11 @@ try {
   await waitText('Choose your password');
   ok(!page.url().includes('invite='), 'the invite code is removed from the address bar');
   const pw = await page.$$('input[type=password]');
-  await pw[0].type('short');
-  await pw[1].type('short');
+  await pw[0].type('abc');
+  await pw[1].type('abc');
   await clickText('Set password');
-  await waitText('at least 12 characters.');
-  ok(true, 'a too-short password is refused');
+  await waitText('at least 6 characters.');
+  ok(true, 'a password below the Firebase minimum is refused');
   await retype(pw[0], 'a-long-enough-password');
   await retype(pw[1], 'a-long-enough-passwor!');
   await clickText('Set password');
@@ -85,15 +85,10 @@ try {
   await waitText('Create your chat passphrase');
   ok(true, 'login leads to first-time setup');
 
-  // --- setup: weak, mismatching, then valid passphrase ---
+  // --- setup: mismatching, then valid passphrase (no strength rules) ---
   const inputs = await page.$$('form input');
   await retype(inputs[0], 'Ann');
-  await inputs[1].type('short');
-  await inputs[2].type('short');
   await page.click('input[type=checkbox]');
-  await clickText('Create keys');
-  await waitText('Too short');
-  ok(true, 'a short passphrase is refused');
   await retype(inputs[1], 'login-password-1 plus words here');
   await retype(inputs[2], PASS);
   await clickText('Create keys');

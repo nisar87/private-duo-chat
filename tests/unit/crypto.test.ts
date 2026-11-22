@@ -222,10 +222,12 @@ describe('sealed small values', () => {
 });
 
 describe('passphrase policy', () => {
-  it('accepts long phrases and rejects short or repetitive ones', () => {
+  it('accepts any non-empty passphrase and only hints about strength', () => {
     expect(checkPassphrase('').ok).toBe(false);
-    expect(checkPassphrase('short').ok).toBe(false);
-    expect(checkPassphrase('aaaaaaaaaaaaaaaaaaaa').ok).toBe(false);
+    expect(checkPassphrase('   ').ok).toBe(false);
+    expect(checkPassphrase('short').ok).toBe(true);
+    expect(checkPassphrase('aaaaaaaaaaaaaaaaaaaa').ok).toBe(true);
+    expect(checkPassphrase('short').score).toBeLessThan(checkPassphrase('blue tiger moves seven stones').score);
     expect(checkPassphrase('blue tiger moves seven stones').ok).toBe(true);
     expect(checkPassphrase('fourteen-chars-long').ok).toBe(true);
   });

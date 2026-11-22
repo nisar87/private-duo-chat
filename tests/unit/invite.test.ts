@@ -23,8 +23,9 @@ describe('invite link', () => {
 });
 
 describe('choosing a password', () => {
-  it('needs 12 characters and a matching retry', () => {
-    expect(checkNewPassword('short', 'short')).toMatch(/at least 12/);
+  it('needs 6 characters (the Firebase minimum) and a matching retry', () => {
+    expect(checkNewPassword('abc', 'abc')).toMatch(/at least 6/);
+    expect(checkNewPassword('simple', 'simple')).toBeNull();
     expect(checkNewPassword('long-enough-pass', 'long-enough-pasX')).toMatch(/do not match/);
     expect(checkNewPassword('long-enough-pass', 'long-enough-pass')).toBeNull();
   });

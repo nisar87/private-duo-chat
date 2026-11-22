@@ -19,7 +19,8 @@ export function takeInviteCode(): string | null {
   return code;
 }
 
-export const PASSWORD_MIN = 12;
+/** Firebase's own lowest allowed length for a login password. */
+export const PASSWORD_MIN = 6;
 
 /** Returns a message if the two passwords cannot be used, or null if fine. */
 export function checkNewPassword(a: string, b: string): string | null {
