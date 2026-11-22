@@ -14,9 +14,9 @@ import {
 } from '../settings/settings';
 import { session } from '../session/session';
 import { useSession } from '../session/useSession';
-import { PassphrasePrompt, ResetKeys, SetQuickCode } from './auth';
+import { PassphrasePrompt, ResetKeys } from './auth';
 
-type Panel = 'none' | 'passphrase' | 'quick' | 'reset' | 'loginpw';
+type Panel = 'none' | 'passphrase' | 'reset' | 'loginpw';
 
 function Row({ title, hint, def, children }: { title: string; hint?: string; def?: string; children: ReactNode }) {
   return (
@@ -102,7 +102,6 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
 
   if (panel === 'passphrase') return <ChangePassphrase onDone={() => { setPanel('none'); setMsg('Passphrase changed.'); }} onCancel={() => setPanel('none')} />;
   if (panel === 'loginpw') return <ChangeLoginPassword onDone={() => { setPanel('none'); setMsg('Login password changed.'); }} onCancel={() => setPanel('none')} />;
-  if (panel === 'quick') return <SetQuickCode onDone={() => { setPanel('none'); setMsg('Quick code saved.'); }} />;
   if (panel === 'reset') return <ResetKeys onCancel={() => setPanel('none')} onDone={onBack} />;
 
   const changed = (Object.keys(DEFAULTS) as (keyof Settings)[]).some((k) => cfg[k] !== DEFAULTS[k]);
@@ -176,8 +175,7 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         <Num k="idleLockMinutes" title="Also lock when I do nothing" hint="Locks even if this window is in front and nobody touches the mouse or keyboard. 0 means never." unit="min" />
         <Toggle k="escTwiceLock" title="Press Esc twice to lock at once" />
         <Toggle k="blurWhenAway" title="Blur messages when this window is not in focus" />
-        <Num k="quickCodeMaxWrong" title="Wrong quick codes before full log out" unit="tries" />
-        <Num k="passphraseMaxAgeHours" title="Quick code works for" hint="After this long you must type your chat password again." unit="hours" />
+        <Num k="quickCodeMaxWrong" title="Wrong codes before full log out" hint="After this many wrong codes in a row you are logged out and need the login password." unit="tries" />
       </div>
 
       <h2>New-message alert</h2>
@@ -227,9 +225,6 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         </p>
         <div className="row" style={{ flexWrap: 'wrap' }}>
           <button className="btn secondary" onClick={onVerify}>Verify safety code</button>
-          <button className="btn secondary" onClick={() => guarded('quick')}>
-            {s.quickCodeSet ? 'Change quick code' : 'Set quick code'}
-          </button>
           <button className="btn secondary" onClick={() => guarded('passphrase')}>Change passphrase</button>
           <button className="btn secondary" onClick={() => setPanel('loginpw')}>Change login password</button>
         </div>
@@ -351,7 +346,7 @@ function ChangeLoginPassword({ onDone, onCancel }: { onDone: () => void; onCance
     <div className="screen">
       <div className="card wide">
         <h1>Change login password</h1>
-        <p>This is the password you type with your email. Your chat password and messages are not affected.</p>
+        <p>This is the password you type with your email. Your code and messages are not affected.</p>
         <form onSubmit={submit}>
           <label className="field">
             <span>Current password</span>
@@ -388,13 +383,13 @@ function ChangePassphrase({ onDone, onCancel }: { onDone: () => void; onCancel: 
     e.preventDefault();
     setError('');
     if (!check.ok) return setError(check.hint);
-    if (newP !== again) return setError('The two new chat passwords do not match.');
+    if (newP !== again) return setError('The two new codes do not match.');
     setBusy(true);
     try {
       await session.changePassphrase(oldP, newP);
       onDone();
     } catch (err) {
-      setError(err instanceof WrongPassphraseError ? 'The current chat password is wrong.' : 'Could not change it. Try again.');
+      setError(err instanceof WrongPassphraseError ? 'The current code is wrong.' : 'Could not change it. Try again.');
       setBusy(false);
     }
   }
@@ -402,15 +397,15 @@ function ChangePassphrase({ onDone, onCancel }: { onDone: () => void; onCancel: 
   return (
     <div className="screen">
       <div className="card wide">
-        <h1>Change chat password</h1>
+        <h1>Change code</h1>
         <p>Your messages and keys stay the same. Only the lock changes.</p>
         <form onSubmit={submit}>
           <label className="field">
-            <span>Current chat password</span>
+            <span>Current code</span>
             <input type="password" autoComplete="off" value={oldP} onChange={(e) => setOld(e.target.value)} required autoFocus />
           </label>
           <label className="field">
-            <span>New chat password</span>
+            <span>New code</span>
             <input type="password" autoComplete="off" value={newP} onChange={(e) => setNew(e.target.value)} required />
           </label>
           <p className="hint">{check.hint}</p>
@@ -420,7 +415,7 @@ function ChangePassphrase({ onDone, onCancel }: { onDone: () => void; onCancel: 
           </label>
           {error && <p className="error">{error}</p>}
           <div className="row spread">
-            <button className="btn" disabled={busy}>{busy ? 'Changing…' : 'Change chat password'}</button>
+            <button className="btn" disabled={busy}>{busy ? 'Changing…' : 'Change code'}</button>
             <button type="button" className="link" onClick={onCancel}>Cancel</button>
           </div>
         </form>

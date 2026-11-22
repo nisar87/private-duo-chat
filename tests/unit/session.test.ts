@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WrongPassphraseError } from '../../src/crypto/identity';
 import {
-  NeedPassphraseError,
   PeerKeyChangedError,
   QuickCodeError,
   SessionStore,
@@ -48,9 +47,7 @@ async function twoPeople() {
   signIn(B, 'uidB', 'bob@example.com');
   await until(() => A.getState().phase === 'needSetup' && B.getState().phase === 'needSetup', 'both need setup');
   await A.setup(PASS_A, 'Ann');
-  await A.setQuickCode('1234');
   await B.setup(PASS_B, 'Bob');
-  await B.setQuickCode('5678');
   await until(() => !!A.getState().peer && !!B.getState().peer && A.getState().canChat && B.getState().canChat, 'both can chat');
   return { A, B };
 }
@@ -135,76 +132,70 @@ describe('setup and first messages', () => {
   });
 });
 
-describe('locking and the quick code', () => {
-  it('locks, rejects a wrong quick code, reopens with the right one', async () => {
+describe('locking and the code', () => {
+  it('locks, refuses a wrong code and reopens with the right one', async () => {
     const { A } = await twoPeople();
     A.lock();
-    expect(A.getState().phase).toBe('needQuickCode');
+    expect(A.getState().phase).toBe('needPassphrase');
     expect(A.getState().canChat).toBe(false);
-    const err = await A.unlockWithQuick('0000').catch((e) => e);
+    const err = await A.unlockWithPassphrase('wrong code').catch((e) => e);
     expect(err).toBeInstanceOf(QuickCodeError);
     expect(err.remaining).toBe(2);
-    await A.unlockWithQuick('1234');
+    await A.unlockWithPassphrase(PASS_A);
     expect(A.getState().phase).toBe('unlocked');
     await until(() => A.getState().canChat, 'chat key back');
-    expect(A.getState().hasWrapKey).toBe(false);
+    expect(A.getState().hasWrapKey).toBe(true);
   });
 
-  it('asks for the passphrase before sensitive changes after a quick unlock', async () => {
+  it('needs no second prompt for sensitive changes after unlocking with the code', async () => {
     const { A, B } = await twoPeople();
     A.lock();
-    await A.unlockWithQuick('1234');
+    await A.unlockWithPassphrase(PASS_A);
     await until(() => A.getState().canChat, 'chat key back');
-    await expect(A.markVerified()).rejects.toBeInstanceOf(NeedPassphraseError);
-    await expect(A.elevate('wrong wrong wrong wrong wrong')).rejects.toBeInstanceOf(WrongPassphraseError);
-    await A.elevate(PASS_A);
     await A.markVerified();
     expect(A.getState().peerStatus).toBe('verified');
     expect(B.getState().peerStatus).toBe('unverified');
   });
 
-  it('logs out completely after 3 wrong quick codes', async () => {
+  it('logs out completely after 3 wrong codes', async () => {
     const { A } = await twoPeople();
     A.lock();
-    await expect(A.unlockWithQuick('1111')).rejects.toBeInstanceOf(QuickCodeError);
-    await expect(A.unlockWithQuick('2222')).rejects.toBeInstanceOf(QuickCodeError);
-    await expect(A.unlockWithQuick('3333')).rejects.toBeInstanceOf(TooManyAttemptsError);
+    await expect(A.unlockWithPassphrase('1111')).rejects.toBeInstanceOf(QuickCodeError);
+    await expect(A.unlockWithPassphrase('2222')).rejects.toBeInstanceOf(QuickCodeError);
+    await expect(A.unlockWithPassphrase('3333')).rejects.toBeInstanceOf(TooManyAttemptsError);
     expect(A.getState().phase).toBe('signedOut');
     expect(A.getState().me).toBeNull();
     expect(A.getState().messages).toEqual([]);
-    // the right code no longer helps; a fresh login needs the full passphrase
+    // a fresh login asks for the code again, and the right one works
     signIn(A, 'uidA', 'ann@example.com');
-    await until(() => A.getState().phase === 'needPassphrase', 'needs passphrase');
-    await expect(A.unlockWithQuick('1234')).rejects.toThrow();
-  });
-
-  it('restores the quick code and the verified state after a fresh passphrase unlock', async () => {
-    const { A, B } = await twoPeople();
-    await verifyBoth(A, B);
-    signIn(A, 'uidA', 'ann@example.com'); // like opening a new tab
-    await until(() => A.getState().phase === 'needPassphrase', 'new tab needs passphrase');
-    await expect(A.unlockWithPassphrase('not the passphrase at all')).rejects.toBeInstanceOf(WrongPassphraseError);
+    await until(() => A.getState().phase === 'needPassphrase', 'needs the code');
     await A.unlockWithPassphrase(PASS_A);
-    expect(A.getState().phase).toBe('unlocked'); // quick code already set, no prompt
-    await until(() => A.getState().peerStatus === 'verified', 'verified restored');
-    A.lock();
-    await A.unlockWithQuick('1234');
     expect(A.getState().phase).toBe('unlocked');
   });
 
-  it('lock from the quick-code offer screen needs the passphrase', async () => {
+  it('restores the verified state after a fresh unlock', async () => {
+    const { A, B } = await twoPeople();
+    await verifyBoth(A, B);
+    signIn(A, 'uidA', 'ann@example.com'); // like opening a new tab
+    await until(() => A.getState().phase === 'needPassphrase', 'new tab needs the code');
+    await A.unlockWithPassphrase(PASS_A);
+    expect(A.getState().phase).toBe('unlocked');
+    await until(() => A.getState().peerStatus === 'verified', 'verified restored');
+  });
+
+  it('lock right after setup needs the code', async () => {
     const A = new SessionStore();
     signIn(A, 'uidA', 'ann@example.com');
     await until(() => A.getState().phase === 'needSetup', 'needs setup');
     await A.setup(PASS_A, 'Ann');
-    expect(A.getState().phase).toBe('offerQuickCode');
+    expect(A.getState().phase).toBe('unlocked');
     A.lock();
     expect(A.getState().phase).toBe('needPassphrase');
   });
 });
 
 describe('passphrase and key changes', () => {
-  it('changes the passphrase and keeps quick code and verification working', async () => {
+  it('changes the code and keeps verification working', async () => {
     const { A, B } = await twoPeople();
     await verifyBoth(A, B);
     await expect(A.changePassphrase('wrong wrong wrong wrong', 'brand new passphrase words here')).rejects.toBeInstanceOf(
@@ -213,12 +204,12 @@ describe('passphrase and key changes', () => {
     await A.changePassphrase(PASS_A, 'brand new passphrase words here');
     signIn(A, 'uidA', 'ann@example.com');
     await until(() => A.getState().phase === 'needPassphrase', 'needs passphrase');
-    await expect(A.unlockWithPassphrase(PASS_A)).rejects.toBeInstanceOf(WrongPassphraseError);
+    await expect(A.unlockWithPassphrase(PASS_A)).rejects.toBeInstanceOf(QuickCodeError);
     await A.unlockWithPassphrase('brand new passphrase words here');
     expect(A.getState().phase).toBe('unlocked');
     await until(() => A.getState().peerStatus === 'verified', 'still verified');
     A.lock();
-    await A.unlockWithQuick('1234'); // quick code survived the change
+    await A.unlockWithPassphrase('brand new passphrase words here');
     await until(() => A.getState().canChat, 'chat key');
     await A.sendText('after change');
     await until(() => B.getState().messages.length === 1, 'B receives');
@@ -239,7 +230,6 @@ describe('passphrase and key changes', () => {
 
     await A.markVerified();
     await until(() => A.getState().peerStatus === 'verified', 'A verified the new key');
-    await B.setQuickCode('2468');
     await B.markVerified();
     await until(() => B.getState().peerStatus === 'verified' && B.getState().canChat, 'B verified');
     await A.sendText('after reset');

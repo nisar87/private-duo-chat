@@ -6,7 +6,7 @@ A private, end-to-end encrypted chat in the browser for **exactly two people**, 
 - Login with email and password, then a separate **chat passphrase** that unlocks the encryption.
 - Messages are encrypted on your computer. Firebase stores only unreadable ciphertext, so your network administrator, your internet provider and Google cannot read them.
 - Messages **delete themselves** after 5 minutes, 1 hour, 6 hours, 24 hours (default), 7 days or 30 days.
-- A **quick code** (4 to 6 digits) reopens the chat after it locks. Three wrong tries log you out.
+- Two secrets: your **login password** (typed once, then you stay logged in) and one **code** you pick (any text you like, different from the login password) that opens the chat and reopens it after it locks. Three wrong codes log you out.
 - Quiet new-message alert: the browser tab blinks, then keeps a small dot. No pop-ups, no sound, no system notifications.
 - Messages blur when you click another window, and the chat locks after 15 minutes in the background. Press **Esc twice** to lock at once.
 - Emoji picker plus typed shortcuts (`:)` `<3` `:D` `:heart:` and more).
@@ -33,7 +33,7 @@ npm run test:e2e    # real Chrome walk-through of the screens (needs Google Chro
 npm run test:rules  # Firestore rules tests (needs Java and the Firebase emulator)
 ```
 
-`npm test` includes a two-person session test (setup, quick code, verification, send and receive, lock, wrong codes, passphrase change, key reset) that runs against an in-memory stand-in for Firestore. `npm run test:e2e` builds the real screens against a fake Firebase and drives them in headless Chrome under the production security headers.
+`npm test` includes a two-person session test (setup, code, verification, send and receive, lock, wrong codes, passphrase change, key reset) that runs against an in-memory stand-in for Firestore. `npm run test:e2e` builds the real screens against a fake Firebase and drives them in headless Chrome under the production security headers.
 
 ## Set up your own copy
 
@@ -54,9 +54,9 @@ Full steps are in [docs/SETUP.md](docs/SETUP.md). In short:
 
 | Piece | What it does |
 | --- | --- |
-| `src/crypto/` | All cryptography (Web Crypto API only): key pair, passphrase wrapping, shared key, message encryption, safety code, quick code |
+| `src/crypto/` | All cryptography (Web Crypto API only): key pair, passphrase wrapping, shared key, message encryption, safety code |
 | `src/session/session.ts` | The only place that holds keys; login, unlock, lock, send, receive |
-| `src/ui/` | Screens: login, setup, unlock, quick code, verify, chat, settings, emoji picker |
+| `src/ui/` | Screens: login, setup, unlock, verify, chat, settings, emoji picker |
 | `src/privacy/` | Tab alert, auto-lock, Esc-twice lock, focus detection |
 | `src/emoji/` | Typed shortcuts, conversion with Backspace undo, emoji data loader, 3D emoji pictures (`Emoji.tsx`, `pictures.ts`) |
 | `src/settings/` | Every adjustable value with its default and limits, saved in this browser |
@@ -75,7 +75,7 @@ Version 1.0.0. Built, tested (unit, session and headless-browser tests) and read
 
 ## Settings
 
-Open **Settings** (the gear) to change: how long messages live (5 minutes to 30 days, shared by both of you), read ticks, "deletes in" text, Enter or Ctrl+Enter to send, shortcut-to-emoji, emoji style (animated 3D, still 3D, plain), auto-lock minutes, Esc-twice lock, blur when away, wrong-code limit, how long the quick code works, alert style and blink time, theme, text size and clock. Each shows its default, and **Reset all settings to defaults** puts everything back. Values are kept in this browser only and survive logout; the message deletion time is stored in the chat so both of you share it.
+Open **Settings** (the gear) to change: how long messages live (5 minutes to 30 days, shared by both of you), read ticks, "deletes in" text, Enter or Ctrl+Enter to send, shortcut-to-emoji, emoji style (animated 3D, still 3D, plain), auto-lock minutes, Esc-twice lock, blur when away, wrong-code limit, alert style and blink time, theme, text size and clock. Each shows its default, and **Reset all settings to defaults** puts everything back. Values are kept in this browser only and survive logout; the message deletion time is stored in the chat so both of you share it.
 
 ## Emoji pictures
 
@@ -83,7 +83,7 @@ Emoji show as 3D pictures served from this site (no other website is contacted).
 
 ## Keeping secrets out of git
 
-This repository is public. Never commit service account keys, `.env`, passwords, passphrases or quick codes. `.gitignore` already excludes `.env`, `config/accounts.json`, `.firebaserc` and the generated `firestore.rendered.rules`.
+This repository is public. Never commit service account keys, `.env`, passwords or codes. `.gitignore` already excludes `.env`, `config/accounts.json`, `.firebaserc` and the generated `firestore.rendered.rules`.
 
 ## Licence
 

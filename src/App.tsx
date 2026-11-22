@@ -1,17 +1,14 @@
 import { useEffect, useState } from 'react';
 import { takeInviteCode } from './invite/invite';
-import { useAutoLock } from './privacy/useAutoLock';
 import { useSession } from './session/useSession';
 import {
   ConfigError,
   Forbidden,
   Invite,
   Login,
-  SetQuickCode,
   Setup,
   Splash,
   UnlockPassphrase,
-  UnlockQuick,
 } from './ui/auth';
 import { Unlocked } from './ui/Unlocked';
 
@@ -28,8 +25,6 @@ export default function App() {
     window.addEventListener('hashchange', onHash);
     return () => window.removeEventListener('hashchange', onHash);
   }, []);
-  // While choosing a quick code the chat is already unlocked, so the same locks apply.
-  useAutoLock(s.phase === 'offerQuickCode');
 
   switch (s.phase) {
     case 'configError':
@@ -45,10 +40,6 @@ export default function App() {
       return <Setup />;
     case 'needPassphrase':
       return <UnlockPassphrase />;
-    case 'needQuickCode':
-      return <UnlockQuick />;
-    case 'offerQuickCode':
-      return <SetQuickCode />;
     case 'unlocked':
       return <Unlocked />;
   }

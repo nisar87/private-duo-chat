@@ -35,6 +35,4 @@ export type Phase =
   | 'forbidden'
   | 'needSetup'
   | 'needPassphrase'
-  | 'needQuickCode'
-  | 'offerQuickCode'
   | 'unlocked';

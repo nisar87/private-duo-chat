@@ -79,9 +79,9 @@ Firebase console > Hosting > **Add custom domain**. Use a subdomain with a neutr
 
 ## 10. First run and the invite
 
-1. Open the site, log in as yourself, and choose a display name, a **chat passphrase**, then a **quick code**.
+1. Open the site, log in as yourself, and choose a display name, a **code** (different from your login password).
 2. Open **Settings > Invite**, type her email, and tap **Create invite link**. Copy the link and send it to her privately (a call or a message app you trust).
-3. She opens the link, types a password twice ("Password" and "Retry password"), and taps **Set password**. Then she logs in with her email and that password. She chooses her own display name, chat passphrase and quick code.
+3. She opens the link, types a password twice ("Password" and "Retry password"), and taps **Set password**. Then she logs in with her email and that password. She chooses her own display name, code.
 4. The link works once and Firebase makes it expire after **1 hour**. If it expires, make a new one: it only resets her password, nothing else.
 5. Both open **Settings > Verify safety code**, compare the 30 digits on a call you trust, and tap **They match**.
 6. Start chatting. The tab title shows the neutral name and blinks quietly when a message arrives in a background tab.

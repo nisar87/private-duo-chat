@@ -37,6 +37,7 @@ import {
   rewrapIdentity,
   unlockIdentity,
   verifiedAad,
+  WrongPassphraseError,
   type IdentityRecord,
 } from '../crypto/identity';
 import { decryptMessage, encryptMessage } from '../crypto/messages';
@@ -432,9 +433,9 @@ export class SessionStore {
       if (!me) {
         this.set({ phase: 'needSetup' });
       } else if (this.priv) {
-        this.set({ phase: this.quick ? 'unlocked' : 'offerQuickCode' });
+        this.set({ phase: 'unlocked' });
       } else {
-        this.set({ phase: this.quick ? 'needQuickCode' : 'needPassphrase' });
+        this.set({ phase: 'needPassphrase' });
       }
     }
     void this.recompute();
@@ -497,7 +498,7 @@ export class SessionStore {
     this.passphraseAt = Date.now();
     this.verified = null;
     this.quick = null;
-    this.set({ phase: 'offerQuickCode', hasWrapKey: true });
+    this.set({ phase: 'unlocked', hasWrapKey: true });
     try {
       await setDoc(doc(db, 'users', uid), {
         displayName: displayName.trim().slice(0, 40) || 'Friend',
@@ -515,7 +516,22 @@ export class SessionStore {
   async unlockWithPassphrase(passphrase: string): Promise<void> {
     const { me, uid } = this.s;
     if (!me || !uid) throw new NotReadyError();
-    const id = await unlockIdentity(recordOf(me), passphrase, uid); // throws WrongPassphraseError
+    let id: Awaited<ReturnType<typeof unlockIdentity>>;
+    try {
+      id = await unlockIdentity(recordOf(me), passphrase, uid);
+    } catch (e) {
+      if (e instanceof WrongPassphraseError) {
+        // Wrong code: after the set number of tries you are logged out completely.
+        this.wrongQuick++;
+        const max = getSettings().quickCodeMaxWrong;
+        if (this.wrongQuick >= max) {
+          await this.logout();
+          throw new TooManyAttemptsError();
+        }
+        throw new QuickCodeError(max - this.wrongQuick);
+      }
+      throw e;
+    }
     this.priv = id.privateKey;
     this.wrapKey = id.wrapKey;
     this.unlockedPublicKey = me.publicKey;
@@ -533,28 +549,9 @@ export class SessionStore {
     }
 
     this.quick = null;
-    if (me.quickCodeEnc) {
-      try {
-        const code = await openText(id.wrapKey, me.quickCodeEnc, quickCodeAad(uid));
-        if (isValidQuickCode(code)) {
-          const pkcs8 = await openWrappedPrivate(recordOf(me), id.wrapKey, uid);
-          try {
-            this.quick = await makeQuickBlob(pkcs8, code);
-          } finally {
-            wipe(pkcs8);
-          }
-        }
-      } catch {
-        this.quick = null;
-      }
-    }
 
     pwGuard.clear();
-    this.set({
-      phase: this.quick ? 'unlocked' : 'offerQuickCode',
-      hasWrapKey: true,
-      quickCodeSet: this.quick !== null,
-    });
+    this.set({ phase: 'unlocked', hasWrapKey: true, quickCodeSet: false });
     await this.recompute();
   }
 
@@ -586,19 +583,18 @@ export class SessionStore {
 
   /** Hide everything and drop the keys. A quick code (or the passphrase) is needed to come back. */
   lock(): void {
-    if (this.s.phase !== 'unlocked' && this.s.phase !== 'offerQuickCode') return;
+    if (this.s.phase !== 'unlocked') return;
     this.priv = null;
     this.chatKey = null;
     this.wrapKey = null;
     this.recomputeToken++;
-    const quickValid = this.quick !== null && Date.now() - this.passphraseAt <= passphraseMaxAgeMs();
-    if (!quickValid) this.quick = null;
+    this.quick = null;
     this.set({
-      phase: quickValid ? 'needQuickCode' : 'needPassphrase',
+      phase: 'needPassphrase',
       hasWrapKey: false,
       canChat: false,
       epoch: null,
-      quickCodeSet: quickValid,
+      quickCodeSet: false,
     });
   }
 
@@ -632,10 +628,6 @@ export class SessionStore {
     this.quick = blob;
     this.passphraseAt = Date.now();
     this.set({ quickCodeSet: true, phase: 'unlocked' });
-  }
-
-  skipQuickCode(): void {
-    if (this.s.phase === 'offerQuickCode') this.set({ phase: 'unlocked' });
   }
 
   // ---------- verification, passphrase and keys ----------
@@ -703,7 +695,7 @@ export class SessionStore {
     this.quick = null;
     this.wrongQuick = 0;
     pwGuard.clear();
-    this.set({ phase: 'offerQuickCode', hasWrapKey: true, quickCodeSet: false });
+    this.set({ phase: 'unlocked', hasWrapKey: true, quickCodeSet: false });
     await this.recompute();
     this.clearChat().catch(() => undefined); // old messages cannot be read any more
   }

@@ -24,7 +24,7 @@
 | Shared chat key | ECDH, then HKDF-SHA-256 (info = both account IDs and key versions, sorted) |
 | Messages | AES-256-GCM, fresh random nonce, additional data = chat, sender and message ID, plain text padded to a multiple of 64 bytes |
 | Safety code | SHA-256 over both public keys in sorted order, shown as 30 digits |
-| Quick code | The private key encrypted (AES-256-GCM) under a PBKDF2 key from the code, **kept in page memory only** |
+| Code | The private key encrypted (AES-256-GCM) under a PBKDF2 key from your code; the only chat secret, never sent anywhere |
 
 Keys are non-extractable `CryptoKey` objects held in memory. They are dropped on lock, log out or reload. Firestore uses the memory-only cache, and nothing secret is written to `localStorage`, `sessionStorage` or IndexedDB.
 
@@ -44,7 +44,7 @@ Keys are non-extractable `CryptoKey` objects held in memory. They are dropped on
 3. **The device is the weak point.** Screenshots, malware, a shared computer, or the other person copying text cannot be stopped. Auto-delete cannot undo a screenshot.
 4. **A forgotten passphrase cannot be recovered.** The fix is to reset the keys, which makes existing messages unreadable.
 5. **No forward secrecy.** If a private key and its passphrase are stolen later, messages still stored on the server could be read. Auto-delete limits this to the retention window.
-6. **The quick code is weaker than the passphrase.** Anyone who knows it and reaches the computer while the tab is open can read the chat. It stops working after 3 wrong tries, 12 hours after the passphrase was last typed, and when the tab is closed.
+6. **A short code is weak.** The code is the only key to the chat, so a short one can be guessed offline by someone who copies the encrypted key record. Use a longer phrase if that matters. In the app it stops working after 3 wrong tries (you are logged out).
 7. **No independent security audit.** If secrecy is a matter of personal safety, use Signal.
 
 ## Things the app keeps in memory
@@ -58,7 +58,7 @@ Without this, someone with write access to the database could swap a public key 
 
 ## Rules for contributors
 
-- Never send the passphrase, quick code, private key or chat key over the network or to a log.
+- Never send the code, private key or chat key over the network or to a log.
 - Never store plain text or keys in browser storage.
 - Never reuse a nonce, and never use `Math.random()` for anything.
 - Never render message text as HTML. Text is always inserted as plain text.

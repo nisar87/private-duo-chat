@@ -82,7 +82,7 @@ try {
   await page.type('input[type=email]', 'ann@example.com');
   await page.type('input[type=password]', 'login-password-1');
   await clickText('Log in');
-  await waitText('Create your chat password');
+  await waitText('Create your code');
   ok(true, 'login leads to first-time setup');
 
   // --- setup: mismatching, then valid passphrase (no strength rules) ---
@@ -96,15 +96,8 @@ try {
   ok(true, 'mismatching passphrases are refused');
   await retype(inputs[1], PASS);
   await clickText('Create keys');
-  await waitText('Choose a quick code');
-  ok(true, 'setup creates keys and offers a quick code');
-
-  // --- quick code ---
-  const q = await page.$$('form input');
-  await q[0].type('1234');
-  await q[1].type('1234');
-  await clickText('Save code');
   await page.waitForSelector('.chat');
+  ok(true, 'setup creates keys and opens the chat directly, with no extra quick code step');
   ok((await bodyText()).includes('Waiting for the other person'), 'chat opens, waiting for the other person');
 
   // --- the other person appears ---
@@ -190,21 +183,21 @@ try {
   ok((await page.$('.stage.is-blurred')) === null, 'the blur is removed on return');
   await page2.close();
 
-  // --- quick lock with Esc twice, then quick code ---
+  // --- quick lock with Esc twice, then the code ---
   await page.click('.messages');
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
-  await waitText('Locked');
+  await waitText('Type your code');
   ok(!(await bodyText()).includes('hello from Bob'), 'Esc twice locks and removes every message from the page');
   await page.type('input[type=password]', '0000');
   await clickText('Unlock');
   await waitText('Wrong code');
-  ok((await bodyText()).includes('2 tries left'), 'a wrong quick code shows tries left');
-  await page.type('input[type=password]', '1234');
+  ok((await bodyText()).includes('2 tries left'), 'a wrong code shows tries left');
+  await page.type('input[type=password]', PASS);
   await clickText('Unlock');
   await page.waitForSelector('.chat');
   await waitText('hello from Bob');
-  ok(true, 'the right quick code reopens the chat with messages decrypted');
+  ok(true, 'the right code reopens the chat with messages decrypted');
 
   // --- verify safety code ---
   await clickText('Verify now');
@@ -212,14 +205,6 @@ try {
   const code = await page.$eval('.code-box', (e) => e.textContent.trim());
   ok(/^(\d{5} ){5}\d{5}$/.test(code), `safety code has 6 groups of 5 digits (${code})`);
   await clickText('They match');
-  // after a quick-code unlock the full passphrase is needed first
-  await waitText('Type your chat password');
-  await page.type('.modal-back input[type=password]', 'wrong wrong wrong wrong');
-  await clickText('Continue');
-  await waitText('Wrong chat password');
-  ok(true, 'a sensitive change after a quick unlock asks for the passphrase and refuses a wrong one');
-  await retype(await page.$('.modal-back input[type=password]'), PASS);
-  await clickText('Continue');
   await page.waitForSelector('.chat');
   await page.waitForFunction(() => document.querySelector('.badge.ok')?.textContent === 'Verified');
   ok(true, 'after comparing the code the badge shows Verified');
@@ -244,10 +229,10 @@ try {
   await page3.bringToFront();
   await sleep(22000);
   await page.bringToFront();
-  await waitText('Locked');
+  await waitText('Type your code');
   ok(!(await bodyText()).includes('hello from Bob'), 'after the set time in the background the chat locks');
   await page3.close();
-  await page.type('input[type=password]', '1234');
+  await page.type('input[type=password]', PASS);
   await clickText('Unlock');
   await page.waitForSelector('.chat');
 

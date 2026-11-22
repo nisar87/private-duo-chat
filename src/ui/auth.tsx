@@ -4,11 +4,9 @@ import { missingConfig } from '../config';
 import { firebase } from '../data/firebase';
 import { PASSWORD_MIN, checkNewPassword, setLoginPrefill, takeLoginPrefill } from '../invite/invite';
 import { checkPassphrase } from '../crypto/passphrase';
-import { isValidQuickCode } from '../crypto/quick';
 import { WrongPassphraseError } from '../crypto/identity';
 import {
   QuickCodeError,
-  QuickCodeExpiredError,
   TooManyAttemptsError,
   session,
 } from '../session/session';
@@ -155,8 +153,8 @@ export function Setup() {
     e.preventDefault();
     setError('');
     if (!check.ok) return setError(check.hint);
-    if (pass !== again) return setError('The two chat passwords do not match.');
-    if (pwGuard.matches(pass)) return setError('The chat password must be different from your login password.');
+    if (pass !== again) return setError('The two codes do not match.');
+    if (pwGuard.matches(pass)) return setError('The code must be different from your login password.');
     setBusy(true);
     try {
       await session.setup(pass, name);
@@ -168,10 +166,11 @@ export function Setup() {
 
   return (
     <Screen wide>
-      <h1>Create your chat password</h1>
+      <h1>Create your code</h1>
       <p>
-        This is a second, separate password. It is not the password you just used to log in. It locks
-        your messages on this device and is never sent anywhere, so choose a different one.
+        You log in with your password only the first time on this computer. After that, this code opens the
+        chat every time it locks. It is never sent anywhere, and it must be different from your login
+        password. Any code you like: a short one is quicker to type but easier to guess.
       </p>
       <form onSubmit={submit}>
         <label className="field">
@@ -179,7 +178,7 @@ export function Setup() {
           <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} required />
         </label>
         <label className="field">
-          <span>Chat password (any you like)</span>
+          <span>Code (any you like)</span>
           <input
             type="password"
             autoComplete="off"
@@ -201,7 +200,7 @@ export function Setup() {
           />
         </label>
         <p className="notice warn">
-          If you forget this chat password it cannot be recovered. The only fix is to reset the keys,
+          If you forget this code it cannot be recovered. The only fix is to reset the keys,
           and messages not yet deleted become unreadable.
         </p>
         <label className="checkline">
@@ -238,7 +237,13 @@ export function UnlockPassphrase() {
     try {
       await session.unlockWithPassphrase(pass);
     } catch (err) {
-      setError(err instanceof WrongPassphraseError ? 'Wrong chat password.' : 'Could not unlock.');
+      if (err instanceof QuickCodeError) {
+        setError(`Wrong code. ${err.remaining} ${err.remaining === 1 ? 'try' : 'tries'} left before you are logged out.`);
+      } else if (err instanceof TooManyAttemptsError) {
+        setError('');
+      } else {
+        setError(err instanceof WrongPassphraseError ? 'Wrong code.' : 'Could not unlock.');
+      }
       setPass('');
       setBusy(false);
     }
@@ -249,10 +254,10 @@ export function UnlockPassphrase() {
   return (
     <Screen>
       <h1>Unlock</h1>
-      <p>{me ? `Hello, ${me.displayName}. ` : ''}Type your chat password.</p>
+      <p>{me ? `Hello, ${me.displayName}. ` : ''}Type your code.</p>
       <form onSubmit={submit}>
         <label className="field">
-          <span>Chat password</span>
+          <span>Code</span>
           <input
             type="password"
             autoComplete="off"
@@ -270,7 +275,7 @@ export function UnlockPassphrase() {
       <div className="row spread">
         <p className="hint">
           <button type="button" className="link" onClick={() => setResetting(true)}>
-            Forgot chat password
+            Forgot code
           </button>
         </p>
         <p className="hint">
@@ -296,7 +301,7 @@ export function ResetKeys({ onCancel, onDone }: { onCancel: () => void; onDone?:
     setError('');
     if (confirm.trim().toUpperCase() !== 'RESET') return setError('Type RESET to confirm.');
     if (!check.ok) return setError(check.hint);
-    if (pass !== again) return setError('The two chat passwords do not match.');
+    if (pass !== again) return setError('The two codes do not match.');
     setBusy(true);
     try {
       await session.resetKeys(pass);
@@ -316,7 +321,7 @@ export function ResetKeys({ onCancel, onDone }: { onCancel: () => void; onDone?:
       </p>
       <form onSubmit={submit}>
         <label className="field">
-          <span>New chat password</span>
+          <span>New code</span>
           <input type="password" autoComplete="off" value={pass} onChange={(e) => setPass(e.target.value)} required />
         </label>
         <PassphraseMeter score={check.score} />
@@ -343,142 +348,6 @@ export function ResetKeys({ onCancel, onDone }: { onCancel: () => void; onDone?:
   );
 }
 
-// ---------- Unlock with the quick code ----------
-
-export function UnlockQuick() {
-  const [code, setCode] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError('');
-    try {
-      await session.unlockWithQuick(code);
-    } catch (err) {
-      if (err instanceof QuickCodeError) {
-        setError(`Wrong code. ${err.remaining} ${err.remaining === 1 ? 'try' : 'tries'} left before you are logged out.`);
-      } else if (err instanceof QuickCodeExpiredError) {
-        setError('');
-      } else if (err instanceof TooManyAttemptsError) {
-        setError('');
-      } else {
-        setError('Could not unlock.');
-      }
-      setCode('');
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Screen>
-      <h1>Locked</h1>
-      <p>Type your quick code.</p>
-      <form onSubmit={submit}>
-        <label className="field">
-          <span>Quick code</span>
-          <input
-            type="password"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
-            autoComplete="off"
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            required
-            autoFocus
-          />
-        </label>
-        {error && <p className="error">{error}</p>}
-        <button className="btn block" disabled={busy || !isValidQuickCode(code)}>
-          Unlock
-        </button>
-      </form>
-      <p className="hint">
-        <button type="button" className="link" onClick={() => void session.logout()}>
-          Log out
-        </button>
-      </p>
-    </Screen>
-  );
-}
-
-// ---------- Choose a quick code ----------
-
-export function SetQuickCode({ onDone }: { onDone?: () => void }) {
-  const [code, setCode] = useState('');
-  const [again, setAgain] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-
-  async function submit(e: FormEvent) {
-    e.preventDefault();
-    setError('');
-    if (!isValidQuickCode(code)) return setError('Use 4 to 6 digits.');
-    if (code !== again) return setError('The two codes do not match.');
-    setBusy(true);
-    try {
-      await session.setQuickCode(code);
-      onDone?.();
-    } catch {
-      setError('Could not save the code.');
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Screen>
-      <h1>Choose a quick code</h1>
-      <p>
-        After the chat locks, this short code opens it again, so you do not retype the long
-        chat password. It is weaker than the chat password. Three wrong tries log you out.
-      </p>
-      <form onSubmit={submit}>
-        <label className="field">
-          <span>Quick code (4 to 6 digits)</span>
-          <input
-            type="password"
-            inputMode="numeric"
-            maxLength={6}
-            autoComplete="off"
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            autoFocus
-          />
-        </label>
-        <label className="field">
-          <span>Type it again</span>
-          <input
-            type="password"
-            inputMode="numeric"
-            maxLength={6}
-            autoComplete="off"
-            value={again}
-            onChange={(e) => setAgain(e.target.value.replace(/\D/g, ''))}
-          />
-        </label>
-        {error && <p className="error">{error}</p>}
-        <div className="row spread">
-          <button className="btn" disabled={busy}>
-            Save code
-          </button>
-          <button
-            type="button"
-            className="link"
-            onClick={() => {
-              session.skipQuickCode();
-              onDone?.();
-            }}
-          >
-            Skip for now
-          </button>
-        </div>
-      </form>
-    </Screen>
-  );
-}
-
 // ---------- Ask for the passphrase again (sensitive changes after a quick unlock) ----------
 
 export function PassphrasePrompt({ onDone, onCancel }: { onDone: () => void; onCancel: () => void }) {
@@ -494,7 +363,7 @@ export function PassphrasePrompt({ onDone, onCancel }: { onDone: () => void; onC
       await session.elevate(pass);
       onDone();
     } catch (err) {
-      setError(err instanceof WrongPassphraseError ? 'Wrong chat password.' : 'Could not check it.');
+      setError(err instanceof WrongPassphraseError ? 'Wrong code.' : 'Could not check it.');
       setPass('');
       setBusy(false);
     }
@@ -503,11 +372,11 @@ export function PassphrasePrompt({ onDone, onCancel }: { onDone: () => void; onC
   return (
     <div className="modal-back">
       <div className="card">
-        <h1>Type your chat password</h1>
-        <p>This change needs the full chat password, not the quick code.</p>
+        <h1>Type your code</h1>
+        <p>This change needs your code.</p>
         <form onSubmit={submit}>
           <label className="field">
-            <span>Chat password</span>
+            <span>Code</span>
             <input type="password" autoComplete="off" value={pass} onChange={(e) => setPass(e.target.value)} autoFocus required />
           </label>
           {error && <p className="error">{error}</p>}
