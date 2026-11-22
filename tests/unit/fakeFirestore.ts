@@ -165,6 +165,7 @@ export function createFakeFirestore(Timestamp: { now(): unknown; fromMillis(ms: 
     deleteField: () => DELETE,
     initializeFirestore: () => ({ __db: true }),
     memoryLocalCache: () => ({}),
+    __touch: touch,
   };
 }
 

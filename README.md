@@ -29,8 +29,11 @@ Checks you can run any time:
 npm test            # encryption and emoji unit tests
 npm run typecheck
 npm run build
+npm run test:e2e    # real Chrome walk-through of the screens (needs Google Chrome; set CHROME_PATH if not at /usr/bin/google-chrome)
 npm run test:rules  # Firestore rules tests (needs Java and the Firebase emulator)
 ```
+
+`npm test` includes a two-person session test (setup, quick code, verification, send and receive, lock, wrong codes, passphrase change, key reset) that runs against an in-memory stand-in for Firestore. `npm run test:e2e` builds the real screens against a fake Firebase and drives them in headless Chrome under the production security headers.
 
 ## Set up your own copy
 

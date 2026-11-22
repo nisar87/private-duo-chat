@@ -1,5 +1,9 @@
 /** Fixed behaviour settings. Change here, not in the screens. */
-export const AUTO_LOCK_MS = 15 * 60 * 1000; // lock after 15 minutes in the background
+const env = import.meta.env;
+
+/** Minutes in the background before the chat locks. Default 15. Set VITE_AUTO_LOCK_MINUTES to change. */
+const lockMinutes = Number(env.VITE_AUTO_LOCK_MINUTES);
+export const AUTO_LOCK_MS = (lockMinutes > 0 ? lockMinutes : 15) * 60 * 1000;
 export const PASSPHRASE_MAX_AGE_MS = 12 * 60 * 60 * 1000; // quick code stops working after 12 hours
 export const QUICK_CODE_MAX_WRONG = 3; // then a full log out
 export const ESC_DOUBLE_MS = 600; // Esc twice within this time locks at once
@@ -11,8 +15,6 @@ export const RETENTION_OPTIONS: { label: string; ms: number }[] = [
   { label: '24 hours', ms: 24 * 60 * 60 * 1000 },
   { label: '7 days', ms: 7 * 24 * 60 * 60 * 1000 },
 ];
-
-const env = import.meta.env;
 
 export const APP_TITLE: string = (env.VITE_APP_TITLE as string | undefined) || 'Notes';
 

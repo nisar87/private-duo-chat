@@ -13,7 +13,8 @@
     "test": "vitest run",
     "rules:render": "node scripts/render-rules.mjs",
     "test:rules": "node scripts/render-rules.mjs --test && npx firebase-tools emulators:exec --only firestore \"vitest run --config vitest.rules.config.ts\"",
-    "deploy": "node scripts/render-rules.mjs && npm run build && npx firebase-tools deploy"
+    "deploy": "node scripts/render-rules.mjs && npm run build && npx firebase-tools deploy",
+    "test:e2e": "vite build -c vite.e2e.config.ts && node tests/e2e/smoke.mjs"
   },
   "dependencies": {
     "emojibase-data": "18.0.0",
@@ -26,6 +27,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.3.0",
+    "puppeteer-core": "25.18.1",
     "typescript": "7.0.2",
     "vite": "8.3.8",
     "vitest": "5.1.1"
