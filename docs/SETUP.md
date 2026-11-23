@@ -79,12 +79,12 @@ Firebase console > Hosting > **Add custom domain**. Use a subdomain with a neutr
 
 ## 10. First run and the invite
 
-1. Open the site, log in as yourself, and choose a display name, a **code** (different from your login password).
+1. Open the site, log in as yourself, and choose a display name, a **code**. It must differ from your login password and can be any text you like.
 2. Open **Settings > Invite**, type her email, and tap **Create invite link**. Copy the link and send it to her privately (a call or a message app you trust).
-3. She opens the link, types a password twice ("Password" and "Retry password"), and taps **Set password**. Then she logs in with her email and that password. She chooses her own display name, code.
+3. She opens the link, types a password twice ("Password" and "Retry password"), and taps **Set password**. Then she logs in with her email and that password. She chooses her own display name and code.
 4. The link works once and Firebase makes it expire after **1 hour**. If it expires, make a new one: it only resets her password, nothing else.
-5. Both open **Settings > Verify safety code**, compare the 30 digits on a call you trust, and tap **They match**.
-6. Start chatting. The tab title shows the neutral name and blinks quietly when a message arrives in a background tab.
+5. Nothing to compare: each person's key is remembered automatically. If a key ever changes, sending pauses and a banner offers **Accept new key**.
+6. Start chatting. The header shows her status: Active now, Away, Chat locked or Offline with last seen. The tab title shows the neutral name and blinks quietly when a message arrives in a background tab.
 
 Later, each person can change their own password in **Settings > Change login password**.
 
@@ -97,6 +97,8 @@ Later, each person can change their own password in **Settings > Change login pa
 | "This invite cannot be used" | The link expired (1 hour) or was already used. Make a new one in Settings > Invite. |
 | Invite says the server is not set up | `functions/.env` is missing. Run `npm run rules:render`, then `npm run deploy`. |
 | Invite says the email belongs to another account | Use a different email for her, or delete the other account in the Firebase console. |
-| Forgot the passphrase | On the unlock screen use "Forgot passphrase", which resets the keys. Old messages are lost. |
-| Other person's badge says "Key changed" | They reset their keys, or someone changed them. Compare the safety code again. |
+| Forgot the code | On the unlock screen use the reset option, which resets the keys. Old messages are lost. |
+| Banner says the other person's key changed | They reset their keys, or someone changed them. Ask them on a call; if it was them, tap **Accept new key**. |
+| Invite says "internal" | In Google Cloud Run, open the `createpartnerinvite` service and allow public access (the function itself still rejects anyone but you). |
+| Site not working after a deploy | Run `deploy.bat` again; it is safe to repeat. |
 | Rules tests cannot start | They need Java and the Firestore emulator (a download from Google). |

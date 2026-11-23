@@ -5,8 +5,8 @@
 | Who | Can see | Cannot see |
 | --- | --- | --- |
 | Network administrator, Wi-Fi owner, internet provider | That a device connects to your chat domain and to Google servers, when, and roughly how much data | Message text, login details |
-| Google (Firebase) | The two account emails, display names, encrypted blobs, message times and sizes, IP addresses | Message text, the passphrase, private keys |
-| Someone who steals the login password | Only encrypted blobs | Message text (the passphrase is also needed) |
+| Google (Firebase) | The two account emails, display names, encrypted blobs, message times and sizes, IP addresses, and each person's status word (active, away, locked, offline) with its time | Message text, the code, private keys |
+| Someone who steals the login password | Only encrypted blobs | Message text (the code is also needed) |
 
 ## Layers
 
@@ -19,7 +19,7 @@
 | Purpose | Algorithm |
 | --- | --- |
 | Identity key pair | ECDH P-256 |
-| Passphrase to key | PBKDF2-HMAC-SHA-256, 600,000 iterations, 16-byte random salt |
+| Code to key | PBKDF2-HMAC-SHA-256, 600,000 iterations, 16-byte random salt |
 | Protecting the private key | AES-256-GCM, 12-byte random nonce, bound to the account ID and key version |
 | Shared chat key | ECDH, then HKDF-SHA-256 (info = both account IDs and key versions, sorted) |
 | Messages | AES-256-GCM, fresh random nonce, additional data = chat, sender and message ID, plain text padded to a multiple of 64 bytes |
@@ -39,22 +39,26 @@ Keys are non-extractable `CryptoKey` objects held in memory. They are dropped on
 
 ## Limits you must accept
 
-1. **The code comes from the server on every visit.** Whoever controls the Firebase project or the domain could publish changed code that captures the passphrase. Own the Google account with 2-step verification, and remove any developer's access after launch.
+1. **The code comes from the server on every visit.** Whoever controls the Firebase project or the domain could publish changed code that captures the code. Own the Google account with 2-step verification, and remove any developer's access after launch.
 2. **Metadata is not hidden.** Google can see that two accounts exchange messages and when. The network can see the domain you visit.
 3. **The device is the weak point.** Screenshots, malware, a shared computer, or the other person copying text cannot be stopped. Auto-delete cannot undo a screenshot.
-4. **A forgotten passphrase cannot be recovered.** The fix is to reset the keys, which makes existing messages unreadable.
-5. **No forward secrecy.** If a private key and its passphrase are stolen later, messages still stored on the server could be read. Auto-delete limits this to the retention window.
+4. **A forgotten code cannot be recovered.** The fix is to reset the keys, which makes existing messages unreadable.
+5. **No forward secrecy.** If a private key and its code are stolen later, messages still stored on the server could be read. Auto-delete limits this to the retention window.
 6. **A short code is weak.** The code is the only key to the chat, so a short one can be guessed offline by someone who copies the encrypted key record. Use a longer phrase if that matters. In the app it stops working after 3 wrong tries (you are logged out).
 7. **No independent security audit.** If secrecy is a matter of personal safety, use Signal.
 
 ## Things the app keeps in memory
 
-- The login password is held in page memory for up to 10 minutes after login, only so the "create passphrase" screen can refuse an identical passphrase. It is never stored or sent anywhere else.
+- The login password is held in page memory briefly after login, only so setup can refuse a code identical to it. It is never stored or sent anywhere else.
 - The only thing written to browser storage is the tab-alert preference (blink, dot or off).
 
-## Verify the safety code once
+## Key changes (no manual safety-code check)
 
-Without this, someone with write access to the database could swap a public key and sit in the middle. Both people compare the 30 digits in person or on a call you trust. If a key ever changes afterwards, sending is blocked until you compare again.
+The other person's public key is remembered automatically the first time it is seen. If it ever changes afterwards, sending pauses until you tap **Accept new key**. The trade-off: the first key is trusted as the server delivers it, so someone with write access to the database at that exact moment could swap it. Anyone who needs to rule that out should compare the safety code (a function in `src/crypto/safety.ts`) by hand.
+
+## Live status
+
+Each person writes one small `presence` document: a state word and a server time. The database rules only allow that, and only for your own account. It can be turned off in Settings.
 
 ## Rules for contributors
 
