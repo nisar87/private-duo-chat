@@ -105,6 +105,19 @@ try {
   await page.waitForFunction(() => document.querySelector('.chat-head .name')?.textContent === 'Bob');
   ok((await page.$eval('.chat-head .name', (e) => e.textContent)) === 'Bob', 'header shows the other person');
 
+  // --- live status in front of the name ---
+  const statusOf = () => page.$eval('.chat-head .status-text', (e) => e.textContent);
+  await page.evaluate(() => window.__e2e.setPeerPresence('active'));
+  await page.waitForFunction(() => document.querySelector('.chat-head .status-text')?.textContent === 'Active now');
+  await page.evaluate(() => window.__e2e.setPeerPresence('away'));
+  await page.waitForFunction(() => document.querySelector('.chat-head .status-text')?.textContent?.startsWith('Away'));
+  await page.evaluate(() => window.__e2e.setPeerPresence('locked'));
+  await page.waitForFunction(() => document.querySelector('.chat-head .status-text')?.textContent === 'Chat locked');
+  await page.evaluate(() => window.__e2e.setPeerPresence('active', 5 * 60 * 1000));
+  await page.waitForFunction(() => document.querySelector('.chat-head .status-text')?.textContent?.startsWith('Offline'));
+  ok((await statusOf()).startsWith('Offline, last seen'), 'status shows active, away, locked, and offline with last seen (stale signal = offline)');
+  await page.evaluate(() => window.__e2e.setPeerPresence('active'));
+
   // --- typing shortcuts ---
   await page.click('.composer textarea');
   await page.keyboard.type(':) ');

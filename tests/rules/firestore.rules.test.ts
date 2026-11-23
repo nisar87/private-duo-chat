@@ -158,4 +158,25 @@ describe('chat setting', () => {
     await assertFails(setDoc(doc(as(A), 'chats', 'main'), { retentionMs: 86400000, updatedBy: B }));
     await assertFails(setDoc(doc(as(A), 'chats', 'main'), { retentionMs: 86400000, updatedBy: A, other: 1 }));
   });
+
+describe('presence', () => {
+  const status = (state = 'active', extra: Record<string, unknown> = {}) => ({ state, at: serverTimestamp(), ...extra });
+
+  it('lets each person write only their own status and read the other', async () => {
+    const a = env.authenticatedContext(A).firestore();
+    const b = env.authenticatedContext(B).firestore();
+    await assertSucceeds(setDoc(doc(a, 'presence', A), status()));
+    await assertFails(setDoc(doc(a, 'presence', B), status()));
+    await assertSucceeds(getDoc(doc(b, 'presence', A)));
+  });
+
+  it('rejects other states, extra fields, a made-up time and outsiders', async () => {
+    const a = env.authenticatedContext(A).firestore();
+    await assertFails(setDoc(doc(a, 'presence', A), status('typing')));
+    await assertFails(setDoc(doc(a, 'presence', A), status('active', { note: 'x' })));
+    await assertFails(setDoc(doc(a, 'presence', A), { state: 'active', at: Timestamp.fromMillis(1) }));
+    await assertFails(setDoc(doc(env.authenticatedContext(THIRD).firestore(), 'presence', THIRD), status()));
+    await assertFails(deleteDoc(doc(a, 'presence', A)));
+  });
+});
 });

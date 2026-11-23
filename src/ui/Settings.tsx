@@ -175,6 +175,7 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         <Num k="idleLockMinutes" title="Also lock when I do nothing" hint="Locks even if this window is in front and nobody touches the mouse or keyboard. 0 means never." unit="min" />
         <Toggle k="escTwiceLock" title="Press Esc twice to lock at once" />
         <Toggle k="blurWhenAway" title="Blur messages when this window is not in focus" />
+        <Toggle k="shareStatus" title="Show my status (active, away, locked) to the other person" />
         <Num k="quickCodeMaxWrong" title="Wrong codes before full log out" hint="After this many wrong codes in a row you are logged out and need the login password." unit="tries" />
       </div>
 

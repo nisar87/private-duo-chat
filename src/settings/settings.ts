@@ -15,6 +15,7 @@ export interface Settings {
   passphraseMaxAgeHours: number;
   escTwiceLock: boolean;
   blurWhenAway: boolean;
+  shareStatus: boolean;
   readReceipts: boolean;
   showExpiry: boolean;
   enterToSend: boolean;
@@ -34,6 +35,7 @@ export const DEFAULTS: Settings = {
   passphraseMaxAgeHours: 12,
   escTwiceLock: true,
   blurWhenAway: true,
+  shareStatus: true,
   readReceipts: true,
   showExpiry: true,
   enterToSend: true,

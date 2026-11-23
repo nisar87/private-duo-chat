@@ -5,6 +5,7 @@ import { loadEmoji } from '../emoji/data';
 import { withEmoji } from '../emoji/Emoji';
 import { useSettings } from '../settings/settings';
 import { useAttended } from '../privacy/focus';
+import { usePeerPresence, type PeerPresence } from '../session/presence';
 import { PeerKeyChangedError, session } from '../session/session';
 import { useSession } from '../session/useSession';
 import type { RawMessage } from '../types';
@@ -59,6 +60,26 @@ function renderText(text: string, big = false) {
   }
   if (last < text.length) parts.push(...withEmoji(text.slice(last), 'end', size, play));
   return parts;
+}
+
+const STATUS_LABEL = {
+  active: 'Active now',
+  away: 'Away (other window)',
+  locked: 'Chat locked',
+  offline: 'Offline',
+} as const;
+
+function statusText(p: PeerPresence): string {
+  if (p.state !== 'offline') return STATUS_LABEL[p.state];
+  if (!p.lastSeenMs) return STATUS_LABEL.offline;
+  const t = new Date(p.lastSeenMs);
+  const sameDay = t.toDateString() === new Date().toDateString();
+  const hm = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return `Offline, last seen ${sameDay ? hm : t.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' + hm}`;
+}
+
+function StatusDot({ p }: { p: PeerPresence }) {
+  return <span className={`status-dot ${p.state}`} role="img" aria-label={statusText(p)} title={statusText(p)} />;
 }
 
 export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerify: () => void }) {
@@ -167,6 +188,7 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
 
   const blocked = s.peerStatus === 'changed';
   const canSend = s.canChat && !blocked && s.online && draft.trim().length > 0;
+  const presence = usePeerPresence(s.uid, s.peer?.uid ?? null);
   const peerName = s.peer?.displayName ?? 'Waiting…';
 
   const send = useCallback(async () => {
@@ -247,7 +269,9 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
   return (
     <div className="chat">
       <header className="chat-head">
+        {presence && <StatusDot p={presence} />}
         <div className="name">{peerName}</div>
+        {presence && <div className="status-text">{statusText(presence)}</div>}
         <button className="icon-btn" title="Lock now (or press Esc twice)" onClick={() => session.lock()}>
           🔒
         </button>

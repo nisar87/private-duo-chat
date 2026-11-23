@@ -343,3 +343,12 @@ body {
 
 /* Never print or save the chat as a page */
 @media print { body * { display: none !important; } body::before { content: "Notes"; } }
+
+/* Live status in front of the name */
+.chat-head .name { flex: 0 1 auto; }
+.chat-head .status-text { flex: 1; min-width: 0; font-size: 12px; opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; background: #8a8a8a; }
+.status-dot.active { background: #2e9e5b; box-shadow: 0 0 0 3px rgba(46,158,91,.2); }
+.status-dot.away { background: #e0a100; }
+.status-dot.locked { background: transparent; border: 2px solid #4a7fd0; }
+.status-dot.offline { background: #8a8a8a; }

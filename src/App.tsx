@@ -10,9 +10,19 @@ import {
   Splash,
   UnlockPassphrase,
 } from './ui/auth';
+import { PresenceBeacon } from './session/PresenceBeacon';
 import { Unlocked } from './ui/Unlocked';
 
 export default function App() {
+  return (
+    <>
+      <PresenceBeacon />
+      <Screens />
+    </>
+  );
+}
+
+function Screens() {
   const s = useSession();
   // An invite link opens the "choose your password" screen once, then the code is gone from the address.
   const [invite, setInvite] = useState<string | null>(() => takeInviteCode());

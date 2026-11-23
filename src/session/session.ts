@@ -51,6 +51,7 @@ import {
 import { fingerprint } from '../crypto/safety';
 import { openText, sealText, type Sealed } from '../crypto/secretbox';
 import { firebase } from '../data/firebase';
+import { publishPresence } from './presence';
 import type { PeerStatus, Phase, RawMessage, UserDoc } from '../types';
 import { pwGuard } from './pwGuard';
 
@@ -309,6 +310,7 @@ export class SessionStore {
   }
 
   async logout(): Promise<void> {
+    if (this.s.uid) await publishPresence(this.s.uid, 'offline');
     this.stopListeners();
     this.wipeSecrets();
     pwGuard.clear();

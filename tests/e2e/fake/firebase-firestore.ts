@@ -32,6 +32,10 @@ let peer: ({ record: { publicKey: string } } & UnlockedIdentity) | null = null;
     db.set('users/uidB', { displayName: name, ...id.record });
     fake.__touch();
   },
+  setPeerPresence(state: string, agoMs = 0) {
+    db.set('presence/uidB', { state, at: Timestamp.fromMillis(Date.now() - agoMs) });
+    fake.__touch();
+  },
   async swapPeerKey() {
     const id = await createIdentity('another passphrase long enough', 'uidB', 1);
     peer = id;

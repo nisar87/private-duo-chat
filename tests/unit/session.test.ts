@@ -49,6 +49,7 @@ async function twoPeople() {
   await A.setup(PASS_A, 'Ann');
   await B.setup(PASS_B, 'Bob');
   await until(() => !!A.getState().peer && !!B.getState().peer && A.getState().canChat && B.getState().canChat, 'both can chat');
+  await until(() => A.getState().peerStatus === 'verified' && B.getState().peerStatus === 'verified', 'keys remembered automatically');
   return { A, B };
 }
 

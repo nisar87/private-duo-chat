@@ -6,6 +6,7 @@ A private, end-to-end encrypted chat in the browser for **exactly two people**, 
 - Login with email and password, then a separate **chat passphrase** that unlocks the encryption.
 - Messages are encrypted on your computer. Firebase stores only unreadable ciphertext, so your network administrator, your internet provider and Google cannot read them.
 - Messages **delete themselves** after 5 minutes, 1 hour, 6 hours, 24 hours (default), 7 days or 30 days.
+- A live **status** in front of her name: Active now, Away (other window), Chat locked, or Offline with last seen. Only that word and a time are stored, never chat content. You can turn your own status off in Settings.
 - Two secrets: your **login password** (typed once, then you stay logged in) and one **code** you pick (any text you like, different from the login password) that opens the chat and reopens it after it locks. Three wrong codes log you out.
 - Quiet new-message alert: the browser tab blinks, then keeps a small dot. No pop-ups, no sound, no system notifications.
 - Messages blur when you click another window, and the chat locks after 15 minutes in the background. Press **Esc twice** to lock at once.
