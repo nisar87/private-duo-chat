@@ -4,7 +4,7 @@ const env = import.meta.env;
 export const ESC_DOUBLE_MS = 600; // Esc twice within this time locks at once
 export const BLINK_INTERVAL_MS = 1000;
 
-export const APP_TITLE: string = (env.VITE_APP_TITLE as string | undefined) || 'Notes';
+export const APP_TITLE: string = (env.VITE_APP_TITLE as string | undefined) || 'Planning 2026';
 
 export const firebaseConfig = {
   apiKey: env.VITE_FIREBASE_API_KEY as string | undefined,

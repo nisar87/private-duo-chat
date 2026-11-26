@@ -5,7 +5,9 @@ import { loadEmoji } from '../emoji/data';
 import { withEmoji } from '../emoji/Emoji';
 import { useSettings } from '../settings/settings';
 import { useAttended } from '../privacy/focus';
-import { usePeerPresence, type PeerPresence } from '../session/presence';
+import { usePeerPresence } from '../session/presence';
+import { useFormulaBar } from './sheet/SheetShell';
+import { StatusDot, statusText } from './status';
 import { PeerKeyChangedError, session } from '../session/session';
 import { useSession } from '../session/useSession';
 import type { RawMessage } from '../types';
@@ -62,29 +64,10 @@ function renderText(text: string, big = false) {
   return parts;
 }
 
-const STATUS_LABEL = {
-  active: 'Active now',
-  away: 'Away (other window)',
-  locked: 'Chat locked',
-  offline: 'Offline',
-} as const;
-
-function statusText(p: PeerPresence): string {
-  if (p.state !== 'offline') return STATUS_LABEL[p.state];
-  if (!p.lastSeenMs) return STATUS_LABEL.offline;
-  const t = new Date(p.lastSeenMs);
-  const sameDay = t.toDateString() === new Date().toDateString();
-  const hm = t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return `Offline, last seen ${sameDay ? hm : t.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' + hm}`;
-}
-
-function StatusDot({ p }: { p: PeerPresence }) {
-  return <span className={`status-dot ${p.state}`} role="img" aria-label={statusText(p)} title={statusText(p)} />;
-}
-
 export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerify: () => void }) {
   const s = useSession();
   const prefs = useSettings();
+  const sheet = prefs.look === 'sheet';
   const looking = useAttended();
   const attended = looking || !prefs.blurWhenAway;
   const cache = useRef(new Map<string, string | null>());
@@ -153,10 +136,13 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
   );
 
   // Stay at the bottom unless the reader scrolled up.
+  const composerRowRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const el = listRef.current;
-    if (el && stick.current) el.scrollTop = el.scrollHeight;
-  }, [items.length]);
+    if (!el || !stick.current) return;
+    const row = composerRowRef.current;
+    el.scrollTop = sheet && row ? row.offsetTop + row.offsetHeight - el.clientHeight + 6 : el.scrollHeight;
+  }, [items.length, sheet, draft.length > 40]);
 
   // Tell the other person I have read the latest messages.
   const newestFromPeer = useMemo(
@@ -188,7 +174,10 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
 
   const blocked = s.peerStatus === 'changed';
   const canSend = s.canChat && !blocked && s.online && draft.trim().length > 0;
-  const presence = usePeerPresence(s.uid, s.peer?.uid ?? null);
+  const setFormula = useFormulaBar();
+  const [selId, setSelId] = useState<string | null>(null);
+  const presence = usePeerPresence(sheet ? null : s.uid, sheet ? null : s.peer?.uid ?? null);
+  const myName = s.me?.displayName ?? 'Me';
   const peerName = s.peer?.displayName ?? 'Waiting…';
 
   const send = useCallback(async () => {
@@ -263,6 +252,142 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
     const read = (s.peer?.lastReadAtMs ?? 0) >= m.createdAtMs;
     return { glyph: read ? '✓✓' : '✓', read };
   };
+
+  // Spreadsheet look: the formula bar shows the selected cell, or what is being typed.
+  const selIndex = selId ? items.findIndex((i) => i.raw.id === selId) : -1;
+  const composerRow = items.length + 2;
+  useEffect(() => {
+    if (!sheet) return;
+    if (selIndex >= 0) setFormula(`C${selIndex + 2}`, items[selIndex].text ?? '');
+    else setFormula(`C${composerRow}`, draft);
+  }, [sheet, selIndex, composerRow, draft, items, setFormula]);
+
+  if (sheet) {
+    const when = (ms: number) =>
+      `${new Date(ms).toLocaleDateString(undefined, { day: '2-digit', month: 'short' })} ${timeLabel(ms, prefs.timeFormat)}`;
+    const extra = ['E', 'F', 'G', 'H', 'I', 'J'];
+    const blank = (n: number) => (
+      <div className="sg-row" key={`f${n}`} aria-hidden="true">
+        <div className="sg-rn">{n}</div>
+        <div className="sg-c a" /><div className="sg-c b" /><div className="sg-c c" /><div className="sg-c d" />
+        {extra.map((x) => <div className="sg-c x" key={x} />)}
+      </div>
+    );
+    return (
+      <div className="chat sg">
+        {blocked && (
+          <div className="banner">
+            {peerName}'s key changed (for example after a reset), so sending is paused.
+            <button className="link" onClick={() => void session.markVerified().catch(() => onVerify())}>Accept new key</button>
+          </div>
+        )}
+        {!s.online && <div className="banner">You are offline. Sending is paused.</div>}
+        {s.sendError > 0 && Date.now() - s.sendError < 8000 && <div className="banner">A message could not be sent.</div>}
+        <div className={attended ? 'stage' : 'stage is-blurred'}>
+          <div
+            className="sg-scroll"
+            ref={listRef}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              const row = composerRowRef.current;
+              stick.current = !row || row.offsetTop + row.offsetHeight - el.scrollTop - el.clientHeight < 80;
+            }}
+          >
+            <div className="sg-row sg-cols">
+              <div className="sg-rn corner" />
+              {['A', 'B', 'C', 'D', ...extra].map((l) => <div className="sg-colh" key={l}>{l}</div>)}
+            </div>
+            <div className="sg-row sg-head">
+              <div className="sg-rn">1</div>
+              <div className="sg-c a">Time</div><div className="sg-c b">Owner</div><div className="sg-c c">Notes</div><div className="sg-c d">Status</div>
+              {extra.map((x) => <div className="sg-c x" key={x} />)}
+            </div>
+            {items.map((it, i) => {
+              const tick = it.mine ? tickFor(it.raw) : null;
+              return (
+                <div
+                  key={it.raw.id}
+                  className={selId === it.raw.id ? 'sg-row sel' : 'sg-row'}
+                  onClick={() => setSelId(it.raw.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setSelId(it.raw.id);
+                    setMenu({ x: e.clientX, y: e.clientY, item: it });
+                  }}
+                >
+                  <div className="sg-rn">{i + 2}</div>
+                  <div className="sg-c a">{when(it.raw.createdAtMs)}</div>
+                  <div className="sg-c b">{it.mine ? myName : peerName}</div>
+                  <div className={it.text === null ? 'sg-c c wrap failed' : 'sg-c c wrap'}>
+                    {it.text === null ? 'Could not decrypt this cell' : renderText(it.text)}
+                  </div>
+                  <div className="sg-c d">
+                    {tick && prefs.readReceipts && <span className={tick.read ? 'ticks read' : 'ticks'}>{tick.glyph}</span>}
+                    {prefs.showExpiry && <span className="exp">{untilLabel(it.raw.expireAtMs, now)}</span>}
+                  </div>
+                  {extra.map((x) => <div className="sg-c x" key={x} />)}
+                </div>
+              );
+            })}
+            <div className="sg-row sg-compose" ref={composerRowRef}>
+              <div className="sg-rn on">{composerRow}</div>
+              <div className="sg-c a" /><div className="sg-c b" />
+              <div className="sg-c c input" onClick={() => { setSelId(null); inputRef.current?.focus(); }}>
+                <textarea
+                  ref={inputRef}
+                  rows={1}
+                  value={draft}
+                  maxLength={MAX_MESSAGE_CHARS}
+                  aria-label="Notes"
+                  disabled={!s.canChat || blocked}
+                  spellCheck={false}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  data-gramm="false"
+                  onFocus={() => setSelId(null)}
+                  onChange={(e) => onChange(e.target.value, e.target.selectionStart)}
+                  onKeyDown={onKeyDown}
+                  autoFocus
+                />
+              </div>
+              <div className="sg-c d">
+                <button className="sg-emoji" type="button" title="Insert symbol" onClick={() => setPickerOpen((v) => !v)}>🙂</button>
+                <button className="sg-enter" type="button" title="Enter" disabled={!canSend} onClick={() => void send()}>↵</button>
+              </div>
+              {extra.map((x) => <div className="sg-c x" key={x} />)}
+            </div>
+            {Array.from({ length: 60 }, (_, k) => blank(composerRow + 1 + k))}
+          </div>
+          {pickerOpen && (
+            <div className="sg-picker">
+              <EmojiPicker
+                onPick={insertEmoji}
+                onClose={() => {
+                  setPickerOpen(false);
+                  inputRef.current?.focus();
+                }}
+              />
+            </div>
+          )}
+          {!attended && <div className="blur-note">Click here to show the cells</div>}
+        </div>
+        {error && <div className="banner">{error}</div>}
+        {menu && (
+          <div className="menu" style={{ left: menu.x, top: menu.y }}>
+            {menu.item.text !== null && (
+              <button onClick={() => void navigator.clipboard?.writeText(menu.item.text ?? '')}>Copy</button>
+            )}
+            {menu.item.mine && (
+              <button className="danger" onClick={() => void session.deleteMessage(menu.item.raw.id)}>
+                Delete row
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   let lastDay = '';
 

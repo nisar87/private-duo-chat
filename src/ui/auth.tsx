@@ -96,7 +96,7 @@ export function Login() {
   return (
     <Screen>
       <h1>Log in</h1>
-      <p>Private page. Only two people can enter.</p>
+      <p>Sign in to open the workbook.</p>
       <form onSubmit={submit}>
         <label className="field">
           <span>Email</span>

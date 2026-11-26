@@ -159,6 +159,16 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         )}
       </div>
 
+      <h2>Appearance</h2>
+      <div className="section">
+        <Pick
+          k="look"
+          title="Look of the app"
+          hint="Spreadsheet looks like a workbook at a glance. Windows is the plain chat window."
+          options={[['sheet', 'Spreadsheet'], ['windows', 'Windows chat']]}
+        />
+      </div>
+
       <h2>Emoji</h2>
       <div className="section">
         <Pick

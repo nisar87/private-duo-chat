@@ -11,15 +11,31 @@ import {
   UnlockPassphrase,
 } from './ui/auth';
 import { PresenceBeacon } from './session/PresenceBeacon';
+import { useSettings } from './settings/settings';
+import { SheetShell } from './ui/sheet/SheetShell';
 import { Unlocked } from './ui/Unlocked';
 
 export default function App() {
   return (
     <>
       <PresenceBeacon />
-      <Screens />
+      <Frame />
     </>
   );
+}
+
+function Frame() {
+  const s = useSession();
+  const prefs = useSettings();
+  // The unlocked screens bring their own frame, because the lock and options buttons live there.
+  if (prefs.look === 'sheet' && s.phase !== 'unlocked') {
+    return (
+      <SheetShell>
+        <Screens />
+      </SheetShell>
+    );
+  }
+  return <Screens />;
 }
 
 function Screens() {

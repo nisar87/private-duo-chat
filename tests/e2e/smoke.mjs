@@ -22,6 +22,10 @@ const problems = [];
 let page;
 try {
   page = await browser.newPage();
+  // The main walk-through uses the plain Windows look; the spreadsheet look is checked further down.
+  await page.evaluateOnNewDocument(() => {
+    try { if (!localStorage.getItem('pdc.settings')) localStorage.setItem('pdc.settings', JSON.stringify({ look: 'windows' })); } catch {}
+  });
   await page.setViewport({ width: 1100, height: 800 });
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.message}`));
   page.on('console', (m) => {
@@ -51,7 +55,7 @@ try {
 
   await page.goto('http://localhost:4173/', { waitUntil: 'networkidle0' });
   await waitText('Log in');
-  ok((await page.title()) === 'Notes', 'tab title is the neutral name "Notes"');
+  ok((await page.title()) === 'Planning 2026', 'tab title is the neutral name');
 
   // --- invite link: she chooses her own password, twice ---
   await page.goto('http://localhost:4173/#invite=e2e-code-her-0123456789', { waitUntil: 'networkidle0' });
@@ -170,7 +174,7 @@ try {
   await page.evaluate(() => window.__e2e.peerSend('<img src=x onerror="document.title=\'HACKED\'"><script>1</script>'));
   await waitText('<script>1</script>');
   await sleep(200);
-  ok((await page.title()) === 'Notes' && (await page.$('.bubble img:not(.emo)')) === null, 'HTML in a message is shown as text and does not run');
+  ok((await page.title()) === 'Planning 2026' && (await page.$('.bubble img:not(.emo)')) === null, 'HTML in a message is shown as text and does not run');
 
   // --- tab alert, blur, auto behaviour ---
   const page2 = await browser.newPage(); // brings another tab to the front
@@ -183,16 +187,16 @@ try {
   await sleep(1500);
   const t1 = await page.title();
   const icon1 = await page.$eval('link[rel~=icon]', (l) => l.getAttribute('href'));
-  ok(t1.includes('Notes') && !t1.toLowerCase().includes('are you') && !t1.toLowerCase().includes('chat'), `tab title shows no text (title: "${t1}")`);
+  ok(t1.includes('Planning 2026') && !t1.toLowerCase().includes('are you') && !t1.toLowerCase().includes('chat'), `tab title shows no text (title: "${t1}")`);
   await sleep(1100);
   const titles = new Set([t1, await page.title()]);
-  ok(titles.has('● Notes') || icon1.includes('dot'), 'the tab title or icon shows the new-message dot');
+  ok(titles.has('● Planning 2026') || icon1.includes('dot'), 'the tab title or icon shows the new-message dot');
   await sleep(10500);
-  ok((await page.title()) === '● Notes', 'after 10 seconds the blinking stops and a steady dot stays');
+  ok((await page.title()) === '● Planning 2026', 'after 10 seconds the blinking stops and a steady dot stays');
   ok((await page.$eval('link[rel~=icon]', (l) => l.getAttribute('href'))) === '/icon-dot.svg', 'the tab icon has the dot');
   await page.bringToFront();
   await sleep(500);
-  ok((await page.title()) === 'Notes', 'coming back to the tab clears the alert');
+  ok((await page.title()) === 'Planning 2026', 'coming back to the tab clears the alert');
   ok((await page.$('.stage.is-blurred')) === null, 'the blur is removed on return');
   await page2.close();
 
@@ -218,6 +222,38 @@ try {
   await page.select('select', String(60 * 60 * 1000));
   await sleep(200);
   ok((await page.$eval('select', (s) => s.value)) === String(60 * 60 * 1000), 'retention can be set to 1 hour');
+  await clickText('Back to chat');
+  await page.waitForSelector('.chat');
+
+  // --- spreadsheet look ---
+  await clickText('⚙️');
+  await waitText('Look of the app');
+  const sels = await page.$$('select');
+  for (const sel of sels) {
+    const vals = await sel.evaluate((e) => [...e.options].map((o) => o.value));
+    if (vals.includes('sheet')) await sel.select('sheet');
+  }
+  await page.waitForSelector('.sh');
+  ok(true, 'the spreadsheet look wraps the app in a workbook frame');
+  await page.screenshot({ path: '/tmp/sheet-settings.png' });
+  await clickText('Back to chat');
+  await page.waitForSelector('.sg-compose textarea');
+  await page.type('.sg-compose textarea', 'quarterly numbers look fine');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => [...document.querySelectorAll('.sg-row .sg-c.c')].some((c) => c.textContent.includes('quarterly numbers look fine')));
+  ok((await page.$$eval('.sg-row', (r) => r.length)) > 20, 'messages appear as spreadsheet rows with empty rows below');
+  ok((await page.$eval('.sh-title', (e) => e.textContent)).includes('Bob'), 'the other person\'s status sits in the title bar');
+  await page.click('.sg-row:not(.sg-cols):not(.sg-head):not(.sg-compose) .sg-c.c');
+  await page.waitForFunction(() => document.querySelector('.sh-fbar')?.textContent.length > 0);
+  ok(true, 'selecting a cell shows its content in the formula bar');
+  await page.screenshot({ path: '/tmp/sheet-chat.png' });
+  await clickText('Options');
+  await waitText('Look of the app');
+  for (const sel of await page.$$('select')) {
+    const vals = await sel.evaluate((e) => [...e.options].map((o) => o.value));
+    if (vals.includes('windows')) await sel.select('windows');
+  }
+  await page.waitForFunction(() => !document.querySelector('.sh'));
   await clickText('Back to chat');
   await page.waitForSelector('.chat');
 

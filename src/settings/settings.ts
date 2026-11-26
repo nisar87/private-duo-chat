@@ -26,6 +26,7 @@ export interface Settings {
   textSize: 'small' | 'medium' | 'large';
   timeFormat: 'auto' | '12h' | '24h';
   emojiStyle: 'animated' | 'static3d' | 'native';
+  look: 'sheet' | 'windows';
 }
 
 export const DEFAULTS: Settings = {
@@ -46,6 +47,7 @@ export const DEFAULTS: Settings = {
   textSize: 'medium',
   timeFormat: 'auto',
   emojiStyle: 'animated',
+  look: 'sheet',
 };
 
 /** Allowed range of each number. Anything outside is pulled back inside. */
@@ -63,6 +65,7 @@ const CHOICES: { [K in keyof Settings]?: readonly Settings[K][] } = {
   textSize: ['small', 'medium', 'large'],
   timeFormat: ['auto', '12h', '24h'],
   emojiStyle: ['animated', 'static3d', 'native'],
+  look: ['sheet', 'windows'],
 };
 
 /** Not secret, so it survives logout. Cleared only by "Reset to defaults" or the browser. */
@@ -163,4 +166,5 @@ export function applyLook(s: Settings): void {
   if (s.theme === 'system') root.removeAttribute('data-theme');
   else root.setAttribute('data-theme', s.theme);
   root.setAttribute('data-text', s.textSize);
+  root.setAttribute('data-look', s.look);
 }

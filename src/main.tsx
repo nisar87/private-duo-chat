@@ -5,6 +5,7 @@ import { tabAlert } from './privacy/tabAlert';
 import { session } from './session/session';
 import { applyLook, getSettings, subscribe } from './settings/settings';
 import './styles/app.css';
+import './styles/sheet.css';
 
 applyLook(getSettings());
 subscribe(() => applyLook(getSettings()));
