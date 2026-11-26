@@ -1,10 +1,12 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { APP_TITLE } from '../../config';
+import { useCovered } from '../../privacy/cover';
 import { useAttended } from '../../privacy/focus';
+import { useSettings } from '../../settings/settings';
 import { usePeerPresence } from '../../session/presence';
 import { useSession } from '../../session/useSession';
-import { useSettings } from '../../settings/settings';
 import { StatusDot, statusText } from '../status';
+import { DecoyGrid } from './DecoyGrid';
 
 interface FormulaCtx {
   set: (ref: string, text: string) => void;
@@ -32,14 +34,15 @@ export function SheetShell({
   onOptions?: () => void;
 }) {
   const s = useSession();
-  const prefs = useSettings();
-  const attended = useAttended();
   const live = !!onLock;
+  const covered = useCovered();
+  const attended = useAttended();
+  const prefs = useSettings();
+  const hideStatus = covered || (!attended && prefs.blurWhenAway);
   const presence = usePeerPresence(live ? s.uid : null, live ? s.peer?.uid ?? null : null);
   const [cell, setCell] = useState({ ref: 'A1', text: '' });
   const set = useCallback((ref: string, text: string) => setCell((c) => (c.ref === ref && c.text === text ? c : { ref, text })), []);
   const ctx = useMemo(() => ({ set }), [set]);
-  const hidden = prefs.blurWhenAway && !attended;
   const peerName = s.peer?.displayName ?? '';
 
   return (
@@ -50,7 +53,7 @@ export function SheetShell({
           <span className="sh-file">{APP_TITLE}.xlsx</span>
           <span className="sh-saved">Saved</span>
           <span className="sh-spacer" />
-          {live && presence && peerName && (
+          {live && !hideStatus && presence && peerName && (
             <span className="sh-coauthor" title={statusText(presence)}>
               <span className="sh-avatar">{peerName.slice(0, 1).toUpperCase()}</span>
               <StatusDot p={presence} />
@@ -87,9 +90,16 @@ export function SheetShell({
         <div className="sh-formula">
           <div className="sh-name">{cell.ref}</div>
           <span className="sh-fx" aria-hidden="true">fx</span>
-          <div className={hidden ? 'sh-fbar is-blurred' : 'sh-fbar'}>{cell.text}</div>
+          <div className="sh-fbar">{live ? cell.text : ''}</div>
         </div>
-        <div className="sh-body">{children}</div>
+        <div className={live ? 'sh-body' : 'sh-body plain'}>
+          {!live && (
+            <div className="sh-decoy" aria-hidden="true">
+              <DecoyGrid />
+            </div>
+          )}
+          {children}
+        </div>
         <div className="sh-sheets" aria-hidden="true">
           <span className="sh-nav">◂ ▸</span>
           <span className="sh-sheet on">Sheet1</span>

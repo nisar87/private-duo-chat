@@ -14,6 +14,7 @@ export interface Settings {
   quickCodeMaxWrong: number;
   passphraseMaxAgeHours: number;
   escTwiceLock: boolean;
+  escCover: boolean;
   blurWhenAway: boolean;
   shareStatus: boolean;
   readReceipts: boolean;
@@ -35,6 +36,7 @@ export const DEFAULTS: Settings = {
   quickCodeMaxWrong: 3,
   passphraseMaxAgeHours: 12,
   escTwiceLock: true,
+  escCover: true,
   blurWhenAway: true,
   shareStatus: true,
   readReceipts: true,

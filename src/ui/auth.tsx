@@ -12,6 +12,7 @@ import {
 } from '../session/session';
 import { pwGuard } from '../session/pwGuard';
 import { useSession } from '../session/useSession';
+import { getSettings, useSettings } from '../settings/settings';
 
 function Screen({ children, wide }: { children: ReactNode; wide?: boolean }) {
   return (
@@ -223,6 +224,8 @@ export function Setup() {
 
 // ---------- Unlock with the passphrase ----------
 
+const sheetLookNow = () => getSettings().look === 'sheet';
+
 export function UnlockPassphrase() {
   const { me } = useSession();
   const [pass, setPass] = useState('');
@@ -238,11 +241,11 @@ export function UnlockPassphrase() {
       await session.unlockWithPassphrase(pass);
     } catch (err) {
       if (err instanceof QuickCodeError) {
-        setError(`Wrong code. ${err.remaining} ${err.remaining === 1 ? 'try' : 'tries'} left before you are logged out.`);
+        setError(`${sheetLookNow() ? 'The password you supplied is not correct.' : 'Wrong code.'} ${err.remaining} ${err.remaining === 1 ? 'try' : 'tries'} left before you are logged out.`);
       } else if (err instanceof TooManyAttemptsError) {
         setError('');
       } else {
-        setError(err instanceof WrongPassphraseError ? 'Wrong code.' : 'Could not unlock.');
+        setError(err instanceof WrongPassphraseError ? (sheetLookNow() ? 'The password you supplied is not correct.' : 'Wrong code.') : 'Could not unlock.');
       }
       setPass('');
       setBusy(false);
@@ -251,13 +254,14 @@ export function UnlockPassphrase() {
 
   if (resetting) return <ResetKeys onCancel={() => setResetting(false)} />;
 
+  const sheetLook = useSettings().look === 'sheet';
   return (
     <Screen>
-      <h1>Unlock</h1>
-      <p>{me ? `Hello, ${me.displayName}. ` : ''}Type your code.</p>
+      <h1>{sheetLook ? 'Unprotect Sheet' : 'Unlock'}</h1>
+      <p>{sheetLook ? 'Password to unprotect sheet:' : `${me ? `Hello, ${me.displayName}. ` : ''}Type your code.`}</p>
       <form onSubmit={submit}>
         <label className="field">
-          <span>Code</span>
+          <span>{sheetLook ? 'Password' : 'Code'}</span>
           <input
             type="password"
             autoComplete="off"
@@ -269,7 +273,7 @@ export function UnlockPassphrase() {
         </label>
         {error && <p className="error">{error}</p>}
         <button className="btn block" disabled={busy}>
-          {busy ? 'Unlocking…' : 'Unlock'}
+          {busy ? 'Checking…' : sheetLook ? 'OK' : 'Unlock'}
         </button>
       </form>
       <div className="row spread">

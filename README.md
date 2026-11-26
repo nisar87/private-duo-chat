@@ -3,7 +3,7 @@
 A private, end-to-end encrypted chat in the browser for **exactly two people**, built on Firebase.
 
 - Text and emoji only (no files, images or calls).
-- **Looks like a spreadsheet** by default: a workbook with a title bar, tabs, toolbar, formula bar, column letters, row numbers, sheet tabs and a status bar. Messages are rows (Time, Owner, Notes, Status), you type into the next empty row, and the tab reads "Planning 2026" with a green sheet icon. The other person's status sits in the title bar like a co-author. Light and dark follow your system. Switch to the plain Windows chat window in Settings > Appearance. It uses no Microsoft logos or names.
+- **Looks like a spreadsheet** by default: a workbook with a title bar, tabs, toolbar, formula bar, column letters, row numbers, sheet tabs and a status bar. Messages are rows (Time, Owner, Notes, Status), you type into the next empty row, and the tab reads "Planning 2026" with a green sheet icon. The other person's status sits in the title bar like a co-author. Light and dark follow your system. **Esc once** swaps the screen for an ordinary budget table (Esc twice locks; a click or a later Esc brings the chat back), the same table replaces the chat whenever the window is not in front, and the lock screen reads "Unprotect Sheet". Switch to the plain Windows chat window in Settings > Appearance. It uses no Microsoft logos or names.
 - Two secrets only: your **login password** (typed once per device, then you stay logged in until you log out) and one **code** of your choice that unlocks the encryption every day and after each lock.
 - Messages are encrypted on your computer. Firebase stores only unreadable ciphertext, so your network administrator, your internet provider and Google cannot read them.
 - Messages **delete themselves** after 5 minutes, 1 hour, 6 hours, 24 hours (default), 7 days or 30 days.
@@ -81,7 +81,7 @@ Version 1.0.0. Built, tested (unit, session and headless-browser tests) and depl
 
 ## Settings
 
-Open **Settings** (the gear) to change: how long messages live (5 minutes to 30 days, shared by both of you), read ticks, "deletes in" text, Enter or Ctrl+Enter to send, shortcut-to-emoji, emoji style (animated 3D, still 3D, plain), auto-lock minutes, Esc-twice lock, blur when away, show my status, look of the app (spreadsheet or Windows chat), wrong-code limit, alert style and blink time, theme, text size and clock. Each shows its default, and **Reset all settings to defaults** puts everything back. Values are kept in this browser only and survive logout; the message deletion time is stored in the chat so both of you share it.
+Open **Settings** (the gear, or Options in the spreadsheet look). It has tabs: General, Privacy, Alerts, Display and Account. You can change: how long messages live (5 minutes to 30 days, shared by both of you), read ticks, "deletes in" text, Enter or Ctrl+Enter to send, shortcut-to-emoji, emoji style (animated 3D, still 3D, plain), auto-lock minutes, Esc-twice lock, blur when away, show my status, look of the app (spreadsheet or Windows chat), wrong-code limit, alert style and blink time, theme, text size and clock. Each shows its default, and **Reset all settings to defaults** puts everything back. Values are kept in this browser only and survive logout; the message deletion time is stored in the chat so both of you share it.
 
 ## Emoji pictures
 

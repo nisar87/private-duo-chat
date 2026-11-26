@@ -227,6 +227,7 @@ try {
 
   // --- spreadsheet look ---
   await clickText('⚙️');
+  await clickText('Display');
   await waitText('Look of the app');
   const sels = await page.$$('select');
   for (const sel of sels) {
@@ -247,7 +248,16 @@ try {
   await page.waitForFunction(() => document.querySelector('.sh-fbar')?.textContent.length > 0);
   ok(true, 'selecting a cell shows its content in the formula bar');
   await page.screenshot({ path: '/tmp/sheet-chat.png' });
+  // Esc once covers the screen with an ordinary table; a click brings the chat back.
+  await page.keyboard.press('Escape');
+  await page.waitForFunction(() => document.body.innerText.includes('Office supplies'));
+  ok(!(await bodyText()).includes('quarterly numbers look fine'), 'Esc once covers the chat with an ordinary-looking table');
+  await page.screenshot({ path: '/tmp/sheet-cover.png' });
+  await page.mouse.click(500, 400);
+  await page.waitForFunction(() => document.body.innerText.includes('quarterly numbers look fine'));
+  ok(true, 'a click brings the chat back');
   await clickText('Options');
+  await clickText('Display');
   await waitText('Look of the app');
   for (const sel of await page.$$('select')) {
     const vals = await sel.evaluate((e) => [...e.options].map((o) => o.value));
@@ -277,6 +287,7 @@ try {
 
   // --- owner makes an invite link ---
   await clickText('⚙️');
+  await clickText('Account');
   await waitText('Create invite link');
   await page.type('input[aria-label="Her email"]', 'her@example.com');
   await clickText('Create invite link');

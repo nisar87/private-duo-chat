@@ -6,6 +6,8 @@ import { withEmoji } from '../emoji/Emoji';
 import { useSettings } from '../settings/settings';
 import { useAttended } from '../privacy/focus';
 import { usePeerPresence } from '../session/presence';
+import { useCovered } from '../privacy/cover';
+import { DecoyGrid, DECOY_FORMULA, DECOY_TOTAL_ROW } from './sheet/DecoyGrid';
 import { useFormulaBar } from './sheet/SheetShell';
 import { StatusDot, statusText } from './status';
 import { PeerKeyChangedError, session } from '../session/session';
@@ -68,6 +70,7 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
   const s = useSession();
   const prefs = useSettings();
   const sheet = prefs.look === 'sheet';
+  const covered = useCovered();
   const looking = useAttended();
   const attended = looking || !prefs.blurWhenAway;
   const cache = useRef(new Map<string, string | null>());
@@ -256,11 +259,13 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
   // Spreadsheet look: the formula bar shows the selected cell, or what is being typed.
   const selIndex = selId ? items.findIndex((i) => i.raw.id === selId) : -1;
   const composerRow = items.length + 2;
+  const sheetHidden = sheet && (covered || (!looking && prefs.blurWhenAway));
   useEffect(() => {
     if (!sheet) return;
-    if (selIndex >= 0) setFormula(`C${selIndex + 2}`, items[selIndex].text ?? '');
+    if (covered || (!looking && prefs.blurWhenAway)) setFormula(`D${DECOY_TOTAL_ROW}`, DECOY_FORMULA);
+    else if (selIndex >= 0) setFormula(`C${selIndex + 2}`, items[selIndex].text ?? '');
     else setFormula(`C${composerRow}`, draft);
-  }, [sheet, selIndex, composerRow, draft, items, setFormula]);
+  }, [sheet, covered, looking, prefs.blurWhenAway, selIndex, composerRow, draft, items, setFormula]);
 
   if (sheet) {
     const when = (ms: number) =>
@@ -283,7 +288,7 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
         )}
         {!s.online && <div className="banner">You are offline. Sending is paused.</div>}
         {s.sendError > 0 && Date.now() - s.sendError < 8000 && <div className="banner">A message could not be sent.</div>}
-        <div className={attended ? 'stage' : 'stage is-blurred'}>
+        <div className="stage">
           <div
             className="sg-scroll"
             ref={listRef}
@@ -293,6 +298,7 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
               stick.current = !row || row.offsetTop + row.offsetHeight - el.scrollTop - el.clientHeight < 80;
             }}
           >
+            {sheetHidden ? <DecoyGrid /> : <>
             <div className="sg-row sg-cols">
               <div className="sg-rn corner" />
               {['A', 'B', 'C', 'D', ...extra].map((l) => <div className="sg-colh" key={l}>{l}</div>)}
@@ -358,8 +364,9 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
               {extra.map((x) => <div className="sg-c x" key={x} />)}
             </div>
             {Array.from({ length: 60 }, (_, k) => blank(composerRow + 1 + k))}
+            </>}
           </div>
-          {pickerOpen && (
+          {pickerOpen && !sheetHidden && (
             <div className="sg-picker">
               <EmojiPicker
                 onPick={insertEmoji}
@@ -370,7 +377,6 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
               />
             </div>
           )}
-          {!attended && <div className="blur-note">Click here to show the cells</div>}
         </div>
         {error && <div className="banner">{error}</div>}
         {menu && (

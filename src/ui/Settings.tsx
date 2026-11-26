@@ -88,6 +88,7 @@ type ChoiceKey = { [K in keyof Settings]: Settings[K] extends string ? K : never
 export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: () => void }) {
   const s = useSession();
   const cfg = useSettings();
+  const [tab, setTab] = useState<'general' | 'privacy' | 'alerts' | 'display' | 'account'>('general');
   const [panel, setPanel] = useState<Panel>('none');
   const [ask, setAsk] = useState<Panel | null>(null);
   const [msg, setMsg] = useState('');
@@ -100,7 +101,7 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
     else setAsk(next);
   }
 
-  if (panel === 'passphrase') return <ChangePassphrase onDone={() => { setPanel('none'); setMsg('Passphrase changed.'); }} onCancel={() => setPanel('none')} />;
+  if (panel === 'passphrase') return <ChangePassphrase onDone={() => { setPanel('none'); setMsg('Code changed.'); }} onCancel={() => setPanel('none')} />;
   if (panel === 'loginpw') return <ChangeLoginPassword onDone={() => { setPanel('none'); setMsg('Login password changed.'); }} onCancel={() => setPanel('none')} />;
   if (panel === 'reset') return <ResetKeys onCancel={() => setPanel('none')} onDone={onBack} />;
 
@@ -121,7 +122,16 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         Every value shows its default. Changes are saved in this browser and apply at once.
       </p>
       {msg && <p className="notice ok">{msg}</p>}
+      <div className="set-tabs" role="tablist">
+        {([['general', 'General'], ['privacy', 'Privacy'], ['alerts', 'Alerts'], ['display', 'Display'], ['account', 'Account']] as const).map(([k, label]) => (
+          <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>
+            {label}
+          </button>
+        ))}
+      </div>
 
+      {tab === 'general' && (
+        <>
       <h2>Messages</h2>
       <div className="section">
         <Row title="Delete messages after" hint="Shared by both of you. Applies to new messages." def="24 hours">
@@ -159,36 +169,25 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         )}
       </div>
 
-      <h2>Appearance</h2>
-      <div className="section">
-        <Pick
-          k="look"
-          title="Look of the app"
-          hint="Spreadsheet looks like a workbook at a glance. Windows is the plain chat window."
-          options={[['sheet', 'Spreadsheet'], ['windows', 'Windows chat']]}
-        />
-      </div>
-
-      <h2>Emoji</h2>
-      <div className="section">
-        <Pick
-          k="emojiStyle"
-          title="Emoji style"
-          hint="Animated 3D moves when you hover, and big emoji-only messages dance. Static 3D never moves. Plain uses your system's emoji."
-          options={[['animated', '3D, animated ✨'], ['static3d', '3D, still'], ['native', 'Plain (system)']]}
-        />
-      </div>
-
+        </>
+      )}
+      {tab === 'privacy' && (
+        <>
       <h2>Privacy and locking</h2>
       <div className="section">
         <Num k="autoLockMinutes" title="Lock after being away" hint="Minutes this tab stays in the background before the chat locks." unit="min" />
         <Num k="idleLockMinutes" title="Also lock when I do nothing" hint="Locks even if this window is in front and nobody touches the mouse or keyboard. 0 means never." unit="min" />
+        <Toggle k="escCover" title="Press Esc once to cover the screen" hint="Shows an ordinary-looking sheet at once. Press Esc again later, or click, to come back." />
         <Toggle k="escTwiceLock" title="Press Esc twice to lock at once" />
-        <Toggle k="blurWhenAway" title="Blur messages when this window is not in focus" />
+        <Toggle k="blurWhenAway" title="Cover the screen when this window is not in focus" hint="Spreadsheet look shows an ordinary sheet instead. Windows look blurs the messages." />
         <Toggle k="shareStatus" title="Show my status (active, away, locked) to the other person" />
         <Num k="quickCodeMaxWrong" title="Wrong codes before full log out" hint="After this many wrong codes in a row you are logged out and need the login password." unit="tries" />
       </div>
 
+        </>
+      )}
+      {tab === 'alerts' && (
+        <>
       <h2>New-message alert</h2>
       <div className="section">
         <Pick
@@ -200,12 +199,36 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         {cfg.alertMode === 'blink' && <Num k="alertBlinkSeconds" title="Blink for" unit="seconds" />}
       </div>
 
-      <h2>Look</h2>
+        </>
+      )}
+      {tab === 'display' && (
+        <>
+      <h2>Appearance</h2>
+      <div className="section">
+        <Pick
+          k="look"
+          title="Look of the app"
+          hint="Spreadsheet looks like a workbook at a glance. Windows is the plain chat window."
+          options={[['sheet', 'Spreadsheet'], ['windows', 'Windows chat']]}
+        />
+      </div>
+
+      <h2>Colours and text</h2>
       <div className="section">
         <Pick k="theme" title="Theme" options={[['system', 'Same as my computer'], ['light', 'Light'], ['dark', 'Dark']]} />
         <Pick k="textSize" title="Text size" options={[['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']]} />
         <Pick k="timeFormat" title="Clock" options={[['auto', 'Same as my computer'], ['12h', '12-hour'], ['24h', '24-hour']]} />
       </div>
+      <h2>Emoji</h2>
+      <div className="section">
+        <Pick
+          k="emojiStyle"
+          title="Emoji style"
+          hint="Animated 3D moves when you hover, and big emoji-only messages dance. Static 3D never moves. Plain uses your system's emoji."
+          options={[['animated', '3D, animated ✨'], ['static3d', '3D, still'], ['native', 'Plain (system)']]}
+        />
+      </div>
+
       <div className="section">
         {confirmReset ? (
           <div className="row">
@@ -229,14 +252,18 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         <p className="hint" style={{ marginTop: 8 }}>The message deletion time is shared, so it is not part of this reset.</p>
       </div>
 
+        </>
+      )}
+      {tab === 'account' && (
+        <>
       <h2>Security</h2>
       <div className="section">
         <p className="hint">
-          Safety code: {s.peerStatus === 'verified' ? 'checked' : s.peerStatus === 'changed' ? 'the key changed, check again' : 'not checked yet'}.
+          Other person's key: {s.peerStatus === 'changed' ? 'changed, sending is paused' : s.peerStatus === 'none' ? 'not set up yet' : 'remembered'}.
         </p>
         <div className="row" style={{ flexWrap: 'wrap' }}>
-          <button className="btn secondary" onClick={onVerify}>Verify safety code</button>
-          <button className="btn secondary" onClick={() => guarded('passphrase')}>Change passphrase</button>
+          <button className="btn secondary" onClick={onVerify}>Compare safety code (optional)</button>
+          <button className="btn secondary" onClick={() => guarded('passphrase')}>Change code</button>
           <button className="btn secondary" onClick={() => setPanel('loginpw')}>Change login password</button>
         </div>
       </div>
@@ -258,6 +285,8 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         </div>
       </div>
 
+        </>
+      )}
       {ask && (
         <PassphrasePrompt
           onCancel={() => setAsk(null)}

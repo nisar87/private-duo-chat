@@ -118,3 +118,20 @@
 :root[data-look="sheet"] .menu { box-shadow: var(--shadow); border-color: var(--sh-edge); }
 .sg .emo { width: 1.25em; height: 1.25em; vertical-align: -0.28em; }
 .sg-head .sg-c.d { font-size: 14.5px; color: var(--sh-text); }
+
+/* Data behind the sign-in and lock screens */
+.sh-body.plain { background-image: none; }
+.sh-decoy { position: absolute; inset: 0; overflow: hidden; pointer-events: none; user-select: none; }
+.sh-body.plain > .screen { position: relative; z-index: 1; }
+.sh-body.plain .card { max-width: 360px; }
+.sg-c.num, .sg-total .sg-c.d { justify-content: flex-end; font-variant-numeric: tabular-nums; }
+.sg-total .sg-c { font-weight: 700; border-top: 1px solid var(--sh-edge); }
+.sg-total .sg-c.d { color: var(--sh-text); font-size: 14.5px; }
+.sh-body .hero-emoji, .sh-body .page > p.hint:first-of-type { display: none; }
+
+/* Settings tabs */
+.set-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 14px 0 4px; position: sticky; top: 0; z-index: 2; background: var(--sh-bg, var(--panel)); }
+.set-tabs button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 16px; cursor: pointer; color: var(--muted); font-size: 14px; }
+.set-tabs button:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
+.set-tabs button.on { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.sg-c.d.num { font-size: 14.5px; color: var(--sh-text); }
