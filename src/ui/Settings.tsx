@@ -1,9 +1,9 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { WrongPassphraseError } from '../crypto/identity';
 import { checkPassphrase } from '../crypto/passphrase';
 import { Emoji } from '../emoji/Emoji';
 import { createInvite } from '../invite/invite';
-import { importCoverSheet, removeCoverSheet, useCoverSheet } from '../session/decoy';
+import { coverStatus, importCoverSheet, loadCoverSheet, removeCoverSheet, useCoverSheet } from '../session/decoy';
 import {
   DEFAULTS,
   LIMITS,
@@ -220,7 +220,7 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         <Pick k="textSize" title="Text size" options={[['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']]} />
         <Pick k="timeFormat" title="Clock" options={[['auto', 'Same as my computer'], ['12h', '12-hour'], ['24h', '24-hour']]} />
       </div>
-      {s.uid && s.uid === import.meta.env.VITE_OWNER_UID && <CoverSheetBox />}
+      {s.uid && s.uid === import.meta.env.VITE_OWNER_UID ? <CoverSheetBox /> : <CoverSheetStatus />}
 
       <h2>Emoji</h2>
       <div className="section">
@@ -303,6 +303,22 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
   );
 }
 
+/** The other person's view: only says whether the cover sheet could be read. */
+function CoverSheetStatus() {
+  const cover = useCoverSheet();
+  useEffect(() => {
+    void loadCoverSheet(true);
+  }, []);
+  return (
+    <>
+      <h2>Cover sheet</h2>
+      <div className="section">
+        <p className="hint">{cover ? `In use: ${cover.fileName}.` : `Not in use: ${coverStatus()}.`}</p>
+      </div>
+    </>
+  );
+}
+
 /** Owner only: the worksheet picture that replaces the chat when the screen is covered. */
 function CoverSheetBox() {
   const cover = useCoverSheet();
@@ -325,7 +341,7 @@ function CoverSheetBox() {
       <h2>Cover sheet</h2>
       <div className="section">
         <p className="hint">
-          {cover ? `In use: ${cover.fileName}, sheet "${cover.sheet}".` : 'None yet. An ordinary budget table is shown instead.'}{' '}
+          {cover ? `In use: ${cover.fileName}, sheet "${cover.sheet}".` : `Not in use: ${coverStatus()}. An ordinary budget table is shown instead.`}{' '}
           It is shown when you press Esc, or when this window is not in front. Only the two of you can read it.
         </p>
         <div className="row" style={{ flexWrap: 'wrap' }}>
