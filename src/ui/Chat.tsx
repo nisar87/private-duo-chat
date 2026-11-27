@@ -7,6 +7,7 @@ import { useSettings } from '../settings/settings';
 import { useAttended } from '../privacy/focus';
 import { usePeerPresence } from '../session/presence';
 import { useCovered } from '../privacy/cover';
+import { useCoverSheet } from '../session/decoy';
 import { DecoyGrid, DECOY_FORMULA, DECOY_TOTAL_ROW } from './sheet/DecoyGrid';
 import { useFormulaBar } from './sheet/SheetShell';
 import { StatusDot, statusText } from './status';
@@ -71,6 +72,7 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
   const prefs = useSettings();
   const sheet = prefs.look === 'sheet';
   const covered = useCovered();
+  const coverSheet = useCoverSheet();
   const looking = useAttended();
   const attended = looking || !prefs.blurWhenAway;
   const cache = useRef(new Map<string, string | null>());
@@ -262,10 +264,10 @@ export function Chat({ onSettings, onVerify }: { onSettings: () => void; onVerif
   const sheetHidden = sheet && (covered || (!looking && prefs.blurWhenAway));
   useEffect(() => {
     if (!sheet) return;
-    if (covered || (!looking && prefs.blurWhenAway)) setFormula(`D${DECOY_TOTAL_ROW}`, DECOY_FORMULA);
+    if (covered || (!looking && prefs.blurWhenAway)) (coverSheet ? setFormula('A1', '') : setFormula(`D${DECOY_TOTAL_ROW}`, DECOY_FORMULA));
     else if (selIndex >= 0) setFormula(`C${selIndex + 2}`, items[selIndex].text ?? '');
     else setFormula(`C${composerRow}`, draft);
-  }, [sheet, covered, looking, prefs.blurWhenAway, selIndex, composerRow, draft, items, setFormula]);
+  }, [sheet, covered, coverSheet, looking, prefs.blurWhenAway, selIndex, composerRow, draft, items, setFormula]);
 
   if (sheet) {
     const when = (ms: number) =>

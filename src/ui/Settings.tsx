@@ -3,6 +3,7 @@ import { WrongPassphraseError } from '../crypto/identity';
 import { checkPassphrase } from '../crypto/passphrase';
 import { Emoji } from '../emoji/Emoji';
 import { createInvite } from '../invite/invite';
+import { importCoverSheet, removeCoverSheet, useCoverSheet } from '../session/decoy';
 import {
   DEFAULTS,
   LIMITS,
@@ -219,6 +220,8 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         <Pick k="textSize" title="Text size" options={[['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']]} />
         <Pick k="timeFormat" title="Clock" options={[['auto', 'Same as my computer'], ['12h', '12-hour'], ['24h', '24-hour']]} />
       </div>
+      {s.uid && s.uid === import.meta.env.VITE_OWNER_UID && <CoverSheetBox />}
+
       <h2>Emoji</h2>
       <div className="section">
         <Pick
@@ -297,6 +300,44 @@ export function Settings({ onBack, onVerify }: { onBack: () => void; onVerify: (
         />
       )}
     </div>
+  );
+}
+
+/** Owner only: the worksheet picture that replaces the chat when the screen is covered. */
+function CoverSheetBox() {
+  const cover = useCoverSheet();
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function pick(file: File | undefined) {
+    if (!file) return;
+    setBusy(true);
+    setMsg('');
+    try {
+      await importCoverSheet(await file.text());
+      setMsg('Cover sheet saved. Press Esc once to see it.');
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : 'Could not import this file.');
+    }
+    setBusy(false);
+  }
+  return (
+    <>
+      <h2>Cover sheet</h2>
+      <div className="section">
+        <p className="hint">
+          {cover ? `In use: ${cover.fileName}, sheet "${cover.sheet}".` : 'None yet. An ordinary budget table is shown instead.'}{' '}
+          It is shown when you press Esc, or when this window is not in front. Only the two of you can read it.
+        </p>
+        <div className="row" style={{ flexWrap: 'wrap' }}>
+          <label className="btn secondary" style={{ cursor: 'pointer' }}>
+            {busy ? 'Saving…' : 'Choose cover sheet file'}
+            <input type="file" accept=".json,application/json" hidden disabled={busy} onChange={(e) => { void pick(e.target.files?.[0]); e.target.value = ''; }} />
+          </label>
+          {cover && <button className="btn secondary" onClick={() => void removeCoverSheet().then(() => setMsg('Cover sheet removed.'))}>Remove</button>}
+        </div>
+        {msg && <p className="hint" style={{ marginTop: 8 }}>{msg}</p>}
+      </div>
+    </>
   );
 }
 

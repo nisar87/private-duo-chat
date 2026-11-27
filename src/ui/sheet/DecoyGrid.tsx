@@ -1,4 +1,5 @@
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
+import { useCoverSheet, type CoverSheet } from '../../session/decoy';
 
 /** An ordinary budget table, shown instead of the chat when the screen is covered or the window is not in front. */
 const ROWS: [string, string, string, string][] = [
@@ -22,7 +23,45 @@ const EXTRA = ['E', 'F', 'G', 'H', 'I', 'J'];
 export const DECOY_TOTAL_ROW = ROWS.length + 2;
 export const DECOY_FORMULA = `=SUM(D2:D${ROWS.length + 1})`;
 
+function letters(i: number): string {
+  let n = i + 1;
+  let out = '';
+  while (n > 0) {
+    const r = (n - 1) % 26;
+    out = String.fromCharCode(65 + r) + out;
+    n = Math.floor((n - 1) / 26);
+  }
+  return out;
+}
+
+/** The imported worksheet: the picture on top of a grid with the real column widths and row heights. */
+function CoverGrid({ c }: { c: CoverSheet }) {
+  const extraCols = 12;
+  const extraRows = 60;
+  const colW = useMemo(() => [...c.cols, ...Array.from({ length: extraCols }, () => c.defCol)], [c]);
+  const rowH = useMemo(() => [...c.rows, ...Array.from({ length: extraRows }, () => c.defRow)], [c]);
+  const template = `46px ${colW.map((w) => `${w}px`).join(' ')}`;
+  const total = colW.reduce((a, b) => a + b, 0) + 46;
+  return (
+    <div className="dz" style={{ zoom: c.zoom / 100, width: total }}>
+      <div className="dz-row dz-cols" style={{ gridTemplateColumns: template }}>
+        <div className="dz-rn corner" />
+        {colW.map((w, i) => <div className="dz-colh" key={i}>{w > 0 ? letters(i) : ''}</div>)}
+      </div>
+      {rowH.map((h, r) => (
+        <div className="dz-row" key={r} style={{ gridTemplateColumns: template, height: h }}>
+          <div className="dz-rn">{h > 0 ? r + 1 : ''}</div>
+          {colW.map((_, i) => <div className="dz-c" key={i} />)}
+        </div>
+      ))}
+      <img className="dz-img" alt="" draggable={false} src={`data:image/png;base64,${c.image}`} style={{ width: c.imgW, height: c.imgH }} />
+    </div>
+  );
+}
+
 export function DecoyGrid() {
+  const cover = useCoverSheet();
+  if (cover) return <CoverGrid c={cover} />;
   return (
     <>
       <div className="sg-row sg-cols">

@@ -229,6 +229,19 @@ try {
   await clickText('⚙️');
   await clickText('Display');
   await waitText('Look of the app');
+  // Import a cover sheet (a tiny synthetic one, or your own file when COVER_JSON is set).
+  const fs = await import('node:fs');
+  const coverPath = process.env.COVER_JSON || '/tmp/e2e-cover.json';
+  if (!process.env.COVER_JSON) {
+    fs.writeFileSync(coverPath, JSON.stringify({
+      v: 1, fileName: 'Costs.xlsx', sheet: 'Costs', tabs: ['Costs', 'Notes'], zoom: 100,
+      cols: [80, 120, 60], rows: [20, 20, 20, 20], defRow: 20, defCol: 64, imgW: 2, imgH: 2,
+      image: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+    }));
+  }
+  await (await page.$('input[type=file]')).uploadFile(coverPath);
+  await waitText('Cover sheet saved');
+  ok(true, 'the owner can import a cover sheet');
   const sels = await page.$$('select');
   for (const sel of sels) {
     const vals = await sel.evaluate((e) => [...e.options].map((o) => o.value));
@@ -250,8 +263,8 @@ try {
   await page.screenshot({ path: '/tmp/sheet-chat.png' });
   // Esc once covers the screen with an ordinary table; a click brings the chat back.
   await page.keyboard.press('Escape');
-  await page.waitForFunction(() => document.body.innerText.includes('Office supplies'));
-  ok(!(await bodyText()).includes('quarterly numbers look fine'), 'Esc once covers the chat with an ordinary-looking table');
+  await page.waitForFunction(() => document.querySelector('.dz .dz-img'));
+  ok(!(await bodyText()).includes('quarterly numbers look fine'), 'Esc once covers the chat with an ordinary-looking worksheet');
   await page.screenshot({ path: '/tmp/sheet-cover.png' });
   await page.mouse.click(500, 400);
   await page.waitForFunction(() => document.body.innerText.includes('quarterly numbers look fine'));

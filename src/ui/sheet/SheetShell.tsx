@@ -3,6 +3,7 @@ import { APP_TITLE } from '../../config';
 import { useCovered } from '../../privacy/cover';
 import { useAttended } from '../../privacy/focus';
 import { useSettings } from '../../settings/settings';
+import { useCoverSheet } from '../../session/decoy';
 import { usePeerPresence } from '../../session/presence';
 import { useSession } from '../../session/useSession';
 import { StatusDot, statusText } from '../status';
@@ -39,6 +40,9 @@ export function SheetShell({
   const attended = useAttended();
   const prefs = useSettings();
   const hideStatus = covered || (!attended && prefs.blurWhenAway);
+  const cover = useCoverSheet();
+  // While the cover sheet is up (or behind the sign-in and lock screens) the frame carries its real file and tab names.
+  const showCover = !!cover && (!live || hideStatus);
   const presence = usePeerPresence(live ? s.uid : null, live ? s.peer?.uid ?? null : null);
   const [cell, setCell] = useState({ ref: 'A1', text: '' });
   const set = useCallback((ref: string, text: string) => setCell((c) => (c.ref === ref && c.text === text ? c : { ref, text })), []);
@@ -50,7 +54,7 @@ export function SheetShell({
       <div className="sh">
         <div className="sh-title">
           <span className="sh-logo" aria-hidden="true">▦</span>
-          <span className="sh-file">{APP_TITLE}.xlsx</span>
+          <span className="sh-file">{showCover && cover ? cover.fileName : `${APP_TITLE}.xlsx`}</span>
           <span className="sh-saved">Saved</span>
           <span className="sh-spacer" />
           {live && !hideStatus && presence && peerName && (
@@ -67,7 +71,7 @@ export function SheetShell({
             <span key={m} className={m === 'Home' ? 'sh-tab on' : 'sh-tab'} aria-hidden="true">{m}</span>
           ))}
           <span className="sh-spacer" />
-          {live && (
+          {live && !showCover && (
             <>
               <button className="sh-act" onClick={onLock} title="Lock now (or press Esc twice)">🔒 Protect</button>
               <button className="sh-act" onClick={onOptions} title="Options">⚙ Options</button>
@@ -102,8 +106,14 @@ export function SheetShell({
         </div>
         <div className="sh-sheets" aria-hidden="true">
           <span className="sh-nav">◂ ▸</span>
-          <span className="sh-sheet on">Sheet1</span>
-          <span className="sh-sheet">Sheet2</span>
+          {showCover && cover ? (
+            cover.tabs.map((t) => <span key={t} className={t === cover.sheet ? 'sh-sheet on' : 'sh-sheet'}>{t}</span>)
+          ) : (
+            <>
+              <span className="sh-sheet on">Sheet1</span>
+              <span className="sh-sheet">Sheet2</span>
+            </>
+          )}
           <span className="sh-sheet plus">+</span>
         </div>
         <div className="sh-status" aria-hidden="true">
@@ -111,7 +121,7 @@ export function SheetShell({
           <span className="sh-spacer" />
           <span>▦ ▤ ▥</span>
           <span className="sh-zoom">− ───●─── +</span>
-          <span>100%</span>
+          <span>{showCover && cover ? cover.zoom : 100}%</span>
         </div>
       </div>
     </Ctx.Provider>

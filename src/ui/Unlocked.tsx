@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAutoLock } from '../privacy/useAutoLock';
 import { session } from '../session/session';
+import { loadCoverSheet } from '../session/decoy';
 import { useSettings } from '../settings/settings';
 import { SheetShell } from './sheet/SheetShell';
 import { Chat } from './Chat';
@@ -14,6 +15,9 @@ export function Unlocked() {
   const [view, setView] = useState<View>('chat');
   const prefs = useSettings();
   useAutoLock(true);
+  useEffect(() => {
+    if (prefs.look === 'sheet') void loadCoverSheet();
+  }, [prefs.look]);
 
   let screen;
   if (view === 'settings') screen = <Settings onBack={() => setView('chat')} onVerify={() => setView('verify')} />;

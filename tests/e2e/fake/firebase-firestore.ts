@@ -19,7 +19,7 @@ export class Timestamp {
 
 const fake = createFakeFirestore(Timestamp);
 export const {
-  collection, doc, orderBy, limit, query, onSnapshot, setDoc, updateDoc, deleteDoc, getDocs,
+  collection, doc, orderBy, limit, query, onSnapshot, setDoc, updateDoc, deleteDoc, getDoc, getDocs,
   writeBatch, serverTimestamp, deleteField, initializeFirestore, memoryLocalCache,
 } = fake;
 
@@ -30,6 +30,10 @@ let peer: ({ record: { publicKey: string } } & UnlockedIdentity) | null = null;
     const id = await createIdentity('peer passphrase long enough', 'uidB', 1);
     peer = id;
     db.set('users/uidB', { displayName: name, ...id.record });
+    fake.__touch();
+  },
+  seedDoc(path: string, data: Record<string, unknown>) {
+    db.set(path, data);
     fake.__touch();
   },
   setPeerPresence(state: string, agoMs = 0) {

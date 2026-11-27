@@ -135,3 +135,15 @@
 .set-tabs button:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
 .set-tabs button.on { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
 .sg-c.d.num { font-size: 14.5px; color: var(--sh-text); }
+
+/* The imported cover sheet: always drawn like a white worksheet, whatever the theme */
+.dz { position: relative; background: #fff; color: #000; --dz-grid: #d4d4d4; font-size: 12px; }
+.dz-row { display: grid; }
+.dz-cols { position: sticky; top: 0; z-index: 3; height: 20px; }
+.dz-colh { background: #f2f2f2; color: #444; text-align: center; font-size: 12px; line-height: 19px; border-right: 1px solid #bdbdbd; border-bottom: 1px solid #bdbdbd; overflow: hidden; }
+.dz-rn { background: #f2f2f2; color: #444; font-size: 12px; display: flex; align-items: center; justify-content: center; border-right: 1px solid #bdbdbd; border-bottom: 1px solid var(--dz-grid); overflow: hidden; }
+.dz-rn.corner { border-bottom: 1px solid #bdbdbd; }
+.dz-c { border-right: 1px solid var(--dz-grid); border-bottom: 1px solid var(--dz-grid); background: #fff; overflow: hidden; }
+.dz-img { position: absolute; left: 47px; top: 20px; pointer-events: none; user-select: none; max-width: none; }
+.sh-sheets { overflow: hidden; }
+.sh-sheet { white-space: nowrap; flex: none; }

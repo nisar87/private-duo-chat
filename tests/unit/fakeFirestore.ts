@@ -147,6 +147,7 @@ export function createFakeFirestore(Timestamp: { now(): unknown; fromMillis(ms: 
       db.delete(ref.path);
       touch();
     },
+    getDoc: async (ref: { path: string }) => snapOf(ref.path),
     getDocs: async (col: { path: string }) => {
       const paths = [...db.keys()].filter((p) => parentOf(p) === col.path);
       return { docs: paths.map(snapOf), size: paths.length, empty: paths.length === 0 };
